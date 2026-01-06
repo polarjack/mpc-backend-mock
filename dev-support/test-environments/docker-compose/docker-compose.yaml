@@ -1,0 +1,95 @@
+name: mpc-backend-mock
+services:
+  postgres:
+    container_name: mpc-backend-postgres
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  bitcoind:
+    container_name: bitcoind
+    user: 1000:1000
+    image: lncm/bitcoind:v27.0
+    volumes:
+      - ./bitcoind-data:/data/.bitcoin
+    command:
+      - "-regtest"
+      - "-rpcuser=bitcoin"
+      - "-rpcpassword=bitcoin"
+      - "-rpcbind=0.0.0.0"
+      - "-rpcallowip=0.0.0.0/0"
+      - "-fallbackfee=0.00001"
+      - "-txindex=1"
+      - "-wallet=default"
+
+    restart: on-failure
+    stop_grace_period: 15m30s
+    ports:
+      - 18443:18443
+      - 18444:18444
+
+    healthcheck:
+      test:
+        - "CMD"
+        - "bitcoin-cli"
+        - "-regtest"
+        - "-rpcuser=bitcoin"
+        - "-rpcpassword=bitcoin"
+        - "-generate"
+        - "1"
+
+      interval: 5s
+      timeout: 10s
+      retries: 5
+      start_period: 1s
+  electrs:
+    container_name: electrs
+    image: ghcr.io/zeusnetworkhq/ci-containers/electrs:0.10
+    command:
+      - "--conf=/etc/electrs/config.toml"
+    ports:
+      - 50001:50001
+    depends_on:
+      bitcoind:
+        condition: service_healthy
+
+    volumes:
+      - ./bitcoind-data:/bitcoin-data
+      - ./electrs-data:/electrs-data
+      - ${PWD}/electrs-config.toml:/etc/electrs/config.toml
+  btc-rpc-explorer:
+    container_name: btc-rpc-explorer
+    image: ghcr.io/zeusnetworkhq/ci-containers/btc-rpc-explorer:3.4
+    ports:
+      - 3002:3002
+    environment:
+      - "BTCEXP_HOST=0.0.0.0"
+      - "BTCEXP_PORT=3002"
+      - "BTCEXP_BITCOIND_HOST=bitcoind"
+      - "BTCEXP_BITCOIND_PORT=18443"
+      - "BTCEXP_BITCOIND_USER=bitcoin"
+      - "BTCEXP_BITCOIND_PASS=bitcoin"
+      - "BTCEXP_ADDRESS_API=electrum"
+      - "BTCEXP_BITCOIND_RPC_TIMEOUT=5000"
+      - "BTCEXP_ELECTRUM_SERVERS=tcp://electrs:50001"
+      - "BTCEXP_ELECTRUM_TXINDEX=true"
+      - "BTCEXP_UI_THEME=dark"
+    depends_on:
+      bitcoind:
+        condition: service_healthy
+
+volumes:
+  db-data:

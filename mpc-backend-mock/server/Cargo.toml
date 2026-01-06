@@ -1,0 +1,114 @@
+[package]
+name                   = "mpc-backend-mock-server"
+description            = "MPC Backend Mock Server"
+version.workspace      = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+readme.workspace       = true
+license.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+categories.workspace   = true
+keywords.workspace     = true
+publish.workspace      = true
+
+[dependencies]
+tracing            = { workspace = true }
+tracing-journald   = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+http-serde = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+
+async-trait  = { workspace = true }
+futures      = { workspace = true }
+sigfinn      = { workspace = true }
+tokio        = { workspace = true }
+tokio-stream = { workspace = true }
+tokio-util   = { workspace = true }
+
+axum       = { workspace = true }
+tower      = { workspace = true }
+tower-http = { workspace = true }
+
+tonic = { workspace = true }
+
+sqlx = { workspace = true, features = [
+  "bigdecimal",
+  "chrono",
+  "macros",
+  "migrate",
+  "postgres",
+  "runtime-tokio",
+  "tls-rustls",
+  "uuid",
+] }
+
+eris-bitcoin-ext           = { workspace = true }
+eris-bitcoin-rpc-client    = { workspace = true }
+logos-p2tr                 = { workspace = true }
+logos-transaction          = { workspace = true }
+zpl-rpc-client             = { workspace = true }
+zpl-two-way-peg            = { workspace = true }
+zpl-two-way-peg-rpc-client = { workspace = true }
+
+orca_whirlpools_client                 = { workspace = true, features = ["fetch"] }
+solana-account-decoder-client-types    = { workspace = true }
+solana-client                          = { workspace = true }
+solana-sdk                             = { workspace = true }
+solana-transaction-status-client-types = { workspace = true }
+spl-associated-token-account           = { workspace = true }
+spl-token                              = { workspace = true }
+spl-token-2022                         = { workspace = true, features = ["no-entrypoint"] }
+
+clap = { workspace = true, features = [
+  "color",
+  "derive",
+  "env",
+  "error-context",
+  "help",
+  "suggestions",
+  "usage",
+  "wrap_help",
+] }
+clap_complete = { workspace = true }
+
+argon2       = { workspace = true }
+bigdecimal   = { workspace = true }
+borsh        = { workspace = true }
+chrono       = { workspace = true }
+csv          = { workspace = true }
+exitcode     = { workspace = true }
+foyer        = { workspace = true }
+hex          = { workspace = true }
+http         = { workspace = true }
+indexmap     = { workspace = true }
+jsonwebtoken = { workspace = true }
+keycloak     = { workspace = true }
+libc         = { workspace = true }
+rand         = { workspace = true }
+reqwest      = { workspace = true }
+resolve-path = { workspace = true }
+sha2         = { workspace = true }
+shadow-rs    = { workspace = true }
+snafu        = { workspace = true }
+utoipa       = { workspace = true, features = ["axum_extras", "chrono", "uuid", "yaml", "macros"] }
+uuid         = { workspace = true, features = ["serde"] }
+
+mpc-backend-mock-core = { workspace = true }
+zeus-axum             = { workspace = true }
+zeus-metrics          = { workspace = true }
+zeus-protobuf-types   = { workspace = true }
+
+[build-dependencies]
+shadow-rs = { workspace = true }
+
+[dev-dependencies]
+axum-test = "16"
+tower     = { workspace = true, features = ["util"] }
+
+[lints]
+# workspace = true

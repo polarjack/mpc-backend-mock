@@ -1,0 +1,48 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "-- Get user by ID (excluding soft-deleted users)\nSELECT\n    id,\n    email,\n    keycloak_user_id,\n    is_active,\n    created_at,\n    updated_at,\n    deleted_at\nFROM\n    users\nWHERE\n    id = $1\n    AND deleted_at IS NULL;\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "email",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "keycloak_user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "deleted_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Uuid"]
+    },
+    "nullable": [false, false, false, false, false, false, true]
+  },
+  "hash": "c33b71df68b6c871d01351b71face15fedf95f1cbbcd193cf61204b63cb8b079"
+}

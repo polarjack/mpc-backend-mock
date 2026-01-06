@@ -1,0 +1,54 @@
+log:
+  file_path: null
+  emit_journald: false
+  emit_stdout: true
+  emit_stderr: false
+  log_filters: "info"
+
+web:
+  host: 0.0.0.0
+  port: 14444
+
+postgres:
+  host: localhost
+  port: 8432
+  database: mpc
+  username: mpc_postgres
+  password: mpc_password
+  max_pool_size: 10
+  application_name: mpc-backend-local
+
+bitcoin:
+  network: mainnet
+  rpc_endpoint: https://red-dawn-haze.btc.quiknode.pro/52bf2cb99612e9604cdc5a2b87959fa2182984f0
+  rpc_authentication: bitcoin:bitcoin
+  indexer_endpoint: null
+  support_quicknode_blockbook: true
+
+# solana:
+#   endpoint:
+#     url: https://prettiest-light-crater.solana-devnet.quiknode.pro/a77b7bd14dc6a3f1d84664d3cfc75abe30ae9c3b
+#   endpoint: https://api.devnet.solana.com
+
+solana:
+  endpoint:
+    url: https://tame-long-surf.solana-mainnet.quiknode.pro/ef3559aa525fdd44bb2a68722630ee88f7d983af
+    ws_url: wss://tame-long-surf.solana-mainnet.quiknode.pro/ef3559aa525fdd44bb2a68722630ee88f7d983af
+    cluster: mainnet
+    explorer: solana
+
+health_check:
+  host: 0.0.0.0
+  port: 14447
+
+metrics:
+  enable: false
+  host: 0.0.0.0
+  port: 14446
+
+keycloak:
+  server_url: "http://localhost:8080"
+  realm: "mpc"
+  admin_username: "admin"
+  admin_password: "admin"
+  verify_tls: false

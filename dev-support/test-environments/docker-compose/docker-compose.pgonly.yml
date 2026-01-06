@@ -1,0 +1,23 @@
+name: mpc-postgres-only
+services:
+  mpc-postgres:
+    image: postgres:17.4
+    container_name: mpc-postgres
+    restart: always
+    volumes:
+      - mpc-postgres-data:/var/lib/postgresql/data
+    ports:
+      - 8432:5432
+    environment:
+      POSTGRES_USER: mpc_postgres
+      POSTGRES_PASSWORD: mpc_password
+      POSTGRES_DB: mpc
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mpc_postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mpc-postgres-data:
+    driver: local

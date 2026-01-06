@@ -1,0 +1,95 @@
+[package]
+name                   = "mpc-backend-mock"
+description            = "MPC Backend Mock"
+version.workspace      = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+readme.workspace       = true
+license.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+categories.workspace   = true
+keywords.workspace     = true
+publish.workspace      = true
+
+[[bin]]
+name = "mpc-backend-mock"
+path = "src/main.rs"
+doc  = false
+
+[dependencies]
+tracing            = { workspace = true }
+tracing-journald   = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+base64     = { workspace = true }
+http-serde = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+serde_with = { workspace = true }
+serde_yaml = { workspace = true }
+
+async-trait = { workspace = true }
+futures     = { workspace = true }
+sigfinn     = { workspace = true }
+tokio       = { workspace = true }
+
+reqwest = { workspace = true }
+
+sqlx = { workspace = true, features = [
+  "chrono",
+  "ipnetwork",
+  "json",
+  "macros",
+  "migrate",
+  "postgres",
+  "runtime-tokio",
+  "tls-rustls",
+  "uuid",
+] }
+
+eris-bitcoin-ext        = { workspace = true }
+eris-bitcoin-rpc-client = { workspace = true }
+zpl-bitcoin-spv         = { workspace = true }
+zpl-rpc-client          = { workspace = true }
+
+solana-sdk = { workspace = true }
+
+clap = { workspace = true, features = [
+  "color",
+  "derive",
+  "env",
+  "error-context",
+  "help",
+  "suggestions",
+  "usage",
+  "wrap_help",
+] }
+clap_complete = { workspace = true }
+
+chrono             = { workspace = true }
+exitcode           = { workspace = true }
+google-cloud-auth  = { workspace = true }
+google-cloud-token = { workspace = true }
+hex                = { workspace = true }
+http               = { workspace = true }
+jsonwebtoken       = { workspace = true }
+keycloak           = { workspace = true }
+libc               = { workspace = true }
+rand               = { workspace = true }
+resolve-path       = { workspace = true }
+shadow-rs          = { workspace = true }
+snafu              = { workspace = true }
+utoipa             = { workspace = true, features = ["axum_extras", "chrono", "uuid", "yaml", "macros"] }
+uuid               = { workspace = true }
+
+mpc-backend-mock-core   = { workspace = true }
+mpc-backend-mock-server = { workspace = true }
+zeus-cli-common         = { workspace = true }
+
+[build-dependencies]
+shadow-rs = { workspace = true }
+
+[lints]
+# workspace = true

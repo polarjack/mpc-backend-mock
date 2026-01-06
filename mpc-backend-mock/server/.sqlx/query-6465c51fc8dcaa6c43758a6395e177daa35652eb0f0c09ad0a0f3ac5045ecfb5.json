@@ -1,0 +1,48 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "-- Insert a new user into the database\nINSERT INTO\n    users (email, keycloak_user_id, is_active)\nVALUES\n    ($1, $2, $3)\nRETURNING\n    id,\n    email,\n    keycloak_user_id,\n    is_active,\n    created_at,\n    updated_at,\n    deleted_at;\n",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "email",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "keycloak_user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "deleted_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": ["Varchar", "Uuid", "Bool"]
+    },
+    "nullable": [false, false, false, false, false, false, true]
+  },
+  "hash": "6465c51fc8dcaa6c43758a6395e177daa35652eb0f0c09ad0a0f3ac5045ecfb5"
+}

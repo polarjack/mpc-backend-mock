@@ -1,0 +1,28 @@
+[package]
+name                   = "zeus-metrics"
+description            = "Zeus metrics utilities"
+version.workspace      = true
+authors.workspace      = true
+homepage.workspace     = true
+repository.workspace   = true
+readme.workspace       = true
+license.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+categories.workspace   = true
+keywords.workspace     = true
+
+[dependencies]
+tokio = { workspace = true }
+
+axum       = { workspace = true }
+tower      = { workspace = true }
+tower-http = { workspace = true }
+
+bytes      = { workspace = true }
+mime       = { workspace = true }
+prometheus = { workspace = true }
+snafu      = { workspace = true }
+
+[lints]
+workspace = true

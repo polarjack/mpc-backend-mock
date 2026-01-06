@@ -1,0 +1,30 @@
+[package]
+name                   = "zeus-axum"
+description            = "Zeus Axum utilities"
+version.workspace      = true
+authors.workspace      = true
+homepage.workspace     = true
+readme.workspace       = true
+repository.workspace   = true
+license.workspace      = true
+edition.workspace      = true
+rust-version.workspace = true
+categories.workspace   = true
+keywords.workspace     = true
+
+[dependencies]
+tracing = { workspace = true }
+
+http-serde = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+
+axum = { workspace = true }
+
+http     = { workspace = true }
+indexmap = { workspace = true }
+mime     = { workspace = true }
+snafu    = { workspace = true }
+
+[lints]
+workspace = true

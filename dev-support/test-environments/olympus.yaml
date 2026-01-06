@@ -1,0 +1,46 @@
+log:
+  file_path: null
+  emit_journald: false
+  emit_stdout: true
+  emit_stderr: false
+  log_filters: info
+  formatter: pretty
+web:
+  host: 127.0.0.1
+  port: 14444
+postgres:
+  host: 127.0.0.1
+  port: 5432
+  database: postgres
+  username: postgres
+  password: postgres
+  role: null
+  ssl_mode: prefer
+  max_connections: 100
+metrics:
+  enable: true
+  host: 127.0.0.1
+  port: 14446
+health_check:
+  host: 127.0.0.1
+  port: 14447
+bitcoin:
+  network: regtest
+  rpc_endpoint: http://127.0.0.1:18443/
+  rpc_authentication: bitcoin:bitcoin
+  indexer_endpoint: http://127.0.0.1:50001/
+  support_quicknode_blockbook: false
+solana:
+  endpoint:
+    url: https://tame-long-surf.solana-mainnet.quiknode.pro/ef3559aa525fdd44bb2a68722630ee88f7d983af
+    ws_url: wss://tame-long-surf.solana-mainnet.quiknode.pro/ef3559aa525fdd44bb2a68722630ee88f7d983af
+    cluster: mainnet
+    explorer: solana
+  rpc_client_timeout_milliseconds: 60000
+  simulate_solana_transaction: true
+  send_failed_solana_transaction: false
+key_management_service: !GoogleCloudPlatform
+  project_id: zeusinfra
+  location: asia-east1
+  key_ring: zeus-layer-1
+  crypto_key: playground-1

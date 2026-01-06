@@ -1,0 +1,69 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct KeycloakConfig {
+    /// Keycloak server URL (e.g., "http://localhost:8080")
+    #[serde(default = "KeycloakConfig::default_server_url")]
+    pub server_url: String,
+
+    /// Keycloak realm name (e.g., "mpc")
+    #[serde(default = "KeycloakConfig::default_realm")]
+    pub realm: String,
+
+    /// Client ID for backend service
+    #[serde(default = "KeycloakConfig::default_client_id")]
+    pub client_id: String,
+
+    /// Client secret for backend service
+    #[serde(default = "KeycloakConfig::default_client_secret")]
+    pub client_secret: String,
+
+    /// Admin username for user management operations
+    #[serde(default = "KeycloakConfig::default_admin_username")]
+    pub admin_username: String,
+
+    /// Admin password for user management operations
+    #[serde(default = "KeycloakConfig::default_admin_password")]
+    pub admin_password: String,
+
+    /// Enable TLS certificate verification
+    #[serde(default = "KeycloakConfig::default_verify_ssl")]
+    pub verify_ssl: bool,
+}
+
+impl KeycloakConfig {
+    #[inline]
+    pub fn default_server_url() -> String { "http://localhost:8080".to_string() }
+
+    #[inline]
+    pub fn default_realm() -> String { "mpc".to_string() }
+
+    #[inline]
+    pub fn default_client_id() -> String { "mpc-backend".to_string() }
+
+    #[inline]
+    pub fn default_client_secret() -> String { "changeme".to_string() }
+
+    #[inline]
+    pub fn default_admin_username() -> String { "admin".to_string() }
+
+    #[inline]
+    pub fn default_admin_password() -> String { "admin".to_string() }
+
+    #[inline]
+    pub const fn default_verify_ssl() -> bool { true }
+}
+
+impl Default for KeycloakConfig {
+    fn default() -> Self {
+        Self {
+            server_url: Self::default_server_url(),
+            realm: Self::default_realm(),
+            client_id: Self::default_client_id(),
+            client_secret: Self::default_client_secret(),
+            admin_username: Self::default_admin_username(),
+            admin_password: Self::default_admin_password(),
+            verify_ssl: Self::default_verify_ssl(),
+        }
+    }
+}

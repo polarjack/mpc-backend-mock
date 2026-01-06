@@ -1,0 +1,30 @@
+[package]
+name                 = "zeus-protobuf-types"
+description          = "Zeus common protobuf types"
+version.workspace    = true
+authors.workspace    = true
+homepage.workspace   = true
+readme.workspace     = true
+repository.workspace = true
+license.workspace    = true
+edition.workspace    = true
+categories.workspace = true
+keywords.workspace   = true
+
+[dependencies]
+serde_json = { workspace = true }
+
+futures = { workspace = true }
+
+prost       = { workspace = true }
+prost-types = { workspace = true }
+tonic       = { workspace = true }
+
+snafu = { workspace = true }
+
+[build-dependencies]
+prost-build = { workspace = true }
+tonic-build = { workspace = true }
+
+[lints]
+workspace = true

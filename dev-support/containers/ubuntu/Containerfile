@@ -1,0 +1,74 @@
+# syntax=docker/dockerfile:1.4
+
+# This is the build stage for zeus. Here we create the binary in a temporary image.
+FROM rust AS builder
+
+RUN \
+  --mount=type=ssh \
+  --mount=type=secret,id=GITHUB_BASIC_TOKEN \
+  --mount=type=secret,id=GITHUB_SSH_PRIVATE_KEY \
+  <<EOF
+#!/usr/bin/env bash
+
+set -eu
+
+apt update
+apt install -y \
+    git \
+    openssh-client \
+    libssl-dev \
+    pkg-config \
+    build-essential \
+    protobuf-compiler
+
+if [[ -f /run/secrets/GITHUB_BASIC_TOKEN ]]; then
+  cat /run/secrets/GITHUB_BASIC_TOKEN
+  git config --global \
+    url.https://github.com.insteadOf \
+    ssh://git@github.com
+  git config --global \
+    url.https://github.com/.insteadOf \
+    git@github.com:
+  git config --global \
+    http.https://github.com/.extraheader \
+    "Authorization: basic $(cat /run/secrets/GITHUB_BASIC_TOKEN)"
+else
+  mkdir -p -m 0700 ~/.ssh
+  ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+  if [[ -f /run/secrets/GITHUB_SSH_PRIVATE_KEY ]]; then
+    cp /run/secrets/GITHUB_SSH_PRIVATE_KEY ~/.ssh/id_ed25519
+  fi
+fi
+
+EOF
+
+ARG ACTIONS_CACHE_URL
+ARG ACTIONS_RUNTIME_TOKEN
+
+WORKDIR /build
+COPY . /build
+
+RUN --mount=type=ssh cargo build --locked --release
+
+# This is the 2nd stage: a very small image where we copy the binaries."
+FROM ubuntu as mpc-backend-mock
+
+COPY --from=builder /build/target/release/mpc-backend-mock /usr/bin
+
+
+RUN <<EOF
+#!/usr/bin/env bash
+
+set -eu
+
+apt update
+apt install -y --no-install-recommends ca-certificates
+rm -rf /var/lib/apt/lists/*
+
+# check if executable works in this container
+/usr/bin/mpc-backend-mock version
+
+EOF
+
+ENTRYPOINT [ "/usr/bin/mpc-backend-mock", "version" ]
