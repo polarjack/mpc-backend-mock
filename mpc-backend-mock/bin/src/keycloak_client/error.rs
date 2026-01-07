@@ -79,4 +79,18 @@ pub enum Error {
         location: Location,
         email: String,
     },
+
+    #[snafu(display("Failed to introspect token: {source}, location: {location}"))]
+    IntrospectToken {
+        #[snafu(implicit)]
+        location: Location,
+        source: reqwest::Error,
+    },
+
+    #[snafu(display("Failed to parse introspection response: {source}, location: {location}"))]
+    ParseIntrospectionResponse {
+        #[snafu(implicit)]
+        location: Location,
+        source: serde_json::Error,
+    },
 }

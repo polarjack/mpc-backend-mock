@@ -8,9 +8,51 @@ use snafu::ResultExt;
 use uuid::Uuid;
 
 use self::error::{
-    AuthenticationSnafu, CreateUserSnafu, GetUserSnafu, HealthCheckSnafu, Result, UserNotFoundSnafu,
+    AuthenticationSnafu, CreateUserSnafu, GetUserSnafu, HealthCheckSnafu, IntrospectTokenSnafu,
+    ParseIntrospectionResponseSnafu, Result, UserNotFoundSnafu,
 };
 use crate::config::KeycloakConfig;
+
+/// Token introspection response from Keycloak
+#[allow(dead_code)]
+#[derive(Debug, serde::Deserialize)]
+pub struct TokenIntrospectionResponse {
+    /// Whether the token is active
+    pub active: bool,
+    /// Token scope
+    #[serde(default)]
+    pub scope: Option<String>,
+    /// Client ID
+    #[serde(default)]
+    pub client_id: Option<String>,
+    /// Username
+    #[serde(default)]
+    pub username: Option<String>,
+    /// Token type
+    #[serde(default)]
+    pub token_type: Option<String>,
+    /// Token expiration timestamp
+    #[serde(default)]
+    pub exp: Option<i64>,
+    /// Token issued at timestamp
+    #[serde(default)]
+    pub iat: Option<i64>,
+    /// Token not before timestamp
+    #[serde(default)]
+    pub nbf: Option<i64>,
+    /// Subject (user ID)
+    #[serde(default)]
+    pub sub: Option<String>,
+    /// Audience
+    #[serde(default)]
+    pub aud: Option<String>,
+    /// Issuer
+    #[serde(default)]
+    pub iss: Option<String>,
+    /// JWT ID
+    #[serde(default)]
+    pub jti: Option<String>,
+}
 
 /// Keycloak client wrapper for user management and authentication
 #[allow(dead_code)]
@@ -182,5 +224,106 @@ impl KeycloakClient {
         let admin = KeycloakAdmin::new(&self.server_url, admin_token, self.client.clone());
 
         Ok(admin)
+    }
+
+    /// Introspect a JWT token to validate it and retrieve token metadata
+    ///
+    /// This method calls Keycloak's token introspection endpoint to validate a
+    /// token and retrieve information about it, including whether it's
+    /// active, the subject, expiration time, and other token claims.
+    ///
+    /// # Arguments
+    ///
+    /// * `token` - The JWT token to introspect
+    ///
+    /// # Returns
+    ///
+    /// Returns a `TokenIntrospectionResponse` containing token metadata and
+    /// validation status
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - Authentication with Keycloak fails
+    /// - The introspection request fails
+    /// - The response cannot be parsed
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+    /// # use mpc_backend_mock::keycloak_client::KeycloakClient;
+    /// # use mpc_backend_mock::config::KeycloakConfig;
+    /// # let config = KeycloakConfig::default();
+    /// let client = KeycloakClient::new(config).await?;
+    /// let response = client.introspect_token("eyJhbGciOiJSUzI1NiIsInR5cCI...").await?;
+    /// if response.active {
+    ///     println!("Token is valid for user: {:?}", response.username);
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[allow(dead_code)]
+    pub async fn introspect_token(&self, token: &str) -> Result<TokenIntrospectionResponse> {
+        // First, obtain an admin access token using the token endpoint
+        let token_url =
+            format!("{}/realms/{}/protocol/openid-connect/token", self.server_url, self.realm);
+
+        // Request admin token using password grant (resource owner password
+        // credentials)
+        let token_params = [
+            ("grant_type", "password"),
+            ("client_id", "admin-cli"),
+            ("username", &self.admin_username),
+            ("password", &self.admin_password),
+        ];
+
+        let token_response = self
+            .client
+            .post(&token_url)
+            .form(&token_params)
+            .send()
+            .await
+            .context(IntrospectTokenSnafu)?;
+
+        // Parse the token response to extract the access_token
+        #[derive(serde::Deserialize)]
+        struct TokenResponse {
+            access_token: String,
+        }
+
+        let token_data: TokenResponse =
+            token_response.json().await.context(IntrospectTokenSnafu)?;
+
+        // Build introspection endpoint URL
+        let introspect_url = format!(
+            "{}/realms/{}/protocol/openid-connect/token/introspect",
+            self.server_url, self.realm
+        );
+
+        tracing::info!("Introspecting token at URL: {}", introspect_url);
+
+        // Prepare form data with the token to introspect
+        let form_data = [("token", token)];
+
+        // Make POST request to introspection endpoint with admin bearer token
+        let response = self
+            .client
+            .post(&introspect_url)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .bearer_auth(&token_data.access_token)
+            .form(&form_data)
+            .send()
+            .await
+            .context(IntrospectTokenSnafu)?;
+
+        // Parse response body
+        let response_text = response.text().await.context(IntrospectTokenSnafu)?;
+
+        // Deserialize JSON response
+        let introspection_response: TokenIntrospectionResponse =
+            serde_json::from_str(&response_text).context(ParseIntrospectionResponseSnafu)?;
+
+        Ok(introspection_response)
     }
 }
