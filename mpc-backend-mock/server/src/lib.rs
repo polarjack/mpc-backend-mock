@@ -32,6 +32,7 @@ pub use self::{
     error::{Error, Result},
     web::{controller, middleware::JwksClient, ApiDoc, ServiceState},
 };
+use crate::keycloak_client::KeycloakClient;
 
 const MIGRATOR: Migrator = Migrator { ignore_missing: true, ..sqlx::migrate!() };
 
@@ -56,11 +57,11 @@ pub async fn serve_with_shutdown(config: Config, server_info: ServerInfo) -> Res
     // Initialize KeycloakClient for token introspection (if needed)
     let keycloak_client = match keycloak.jwt_validation_method {
         mpc_backend_mock_core::config::JwtValidationMethod::Introspection => {
-            let client = crate::keycloak_client::KeycloakClient::new(keycloak.clone())
-                .await
-                .map_err(|err| Error::InitializeKeycloakClient {
+            let client = KeycloakClient::new(keycloak.clone()).map_err(|err| {
+                Error::InitializeKeycloakClient {
                     message: format!("Failed to initialize Keycloak client: {err}"),
-                })?;
+                }
+            })?;
             Some(Arc::new(client))
         }
         mpc_backend_mock_core::config::JwtValidationMethod::Jwks => None,
@@ -167,10 +168,10 @@ async fn initialize_postgres_pool(
     };
     let pool =
         pool_opts.connect_with(connect_opts).await.context(error::InitializePostgresPoolSnafu {
-            host: host.to_string(),
+            host: host.clone(),
             port: *port,
-            username: username.to_string(),
-            database: database.to_string(),
+            username: username.clone(),
+            database: database.clone(),
         })?;
 
     MIGRATOR

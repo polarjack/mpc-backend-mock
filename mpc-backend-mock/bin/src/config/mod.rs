@@ -143,10 +143,12 @@ pub async fn load_server_config(
             admin_password: keycloak.admin_password,
             verify_ssl: keycloak.verify_ssl,
             jwt_validation_method: match keycloak.jwt_validation_method {
-                crate::config::JwtValidationMethod::Jwks => {
+                JwtValidationMethod::Jwks => {
+                    // Map to core config enum
                     mpc_backend_mock_core::config::JwtValidationMethod::Jwks
                 }
-                crate::config::JwtValidationMethod::Introspection => {
+                JwtValidationMethod::Introspection => {
+                    // Map to core config enum
                     mpc_backend_mock_core::config::JwtValidationMethod::Introspection
                 }
             },

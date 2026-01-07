@@ -3,16 +3,13 @@ use std::{fmt::Debug, net::SocketAddr};
 use sqlx::postgres::PgSslMode;
 
 /// JWT validation method
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub enum JwtValidationMethod {
     /// Local JWT validation using JWKS (faster, cached)
+    #[default]
     Jwks,
     /// Server-side token introspection (real-time, authoritative)
     Introspection,
-}
-
-impl Default for JwtValidationMethod {
-    fn default() -> Self { Self::Jwks }
 }
 
 #[derive(Clone, Debug)]

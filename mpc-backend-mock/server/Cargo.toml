@@ -111,4 +111,4 @@ axum-test = "16"
 tower     = { workspace = true, features = ["util"] }
 
 [lints]
-# workspace = true
+workspace = true

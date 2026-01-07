@@ -74,20 +74,11 @@ where
                 // Extract the error message from the rejection
                 let error_msg = rejection.body_text();
                 // Check if it's a date format error or currency type error
-                if error_msg.contains("Invalid date format") {
-                    // Extract the date string if possible
-                    Error::Model {
-                        source: mpc_backend_mock_core::error::Error::InvalidDateFormat {
-                            date_str: error_msg,
-                        },
-                    }
-                } else {
-                    // Generic bad request for other deserialization errors
-                    Error::Model {
-                        source: mpc_backend_mock_core::error::Error::InvalidDateFormat {
-                            date_str: error_msg,
-                        },
-                    }
+                // Extract the date string if possible
+                Error::Model {
+                    source: mpc_backend_mock_core::error::Error::InvalidDateFormat {
+                        date_str: error_msg,
+                    },
                 }
             },
         )
@@ -111,7 +102,6 @@ where
 ///     // ... handler logic
 /// }
 /// ```
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct AuthUser(pub AuthUserData);
 

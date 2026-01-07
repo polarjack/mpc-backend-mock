@@ -22,7 +22,7 @@ impl JwksClient {
     /// Create a new JWKS client
     ///
     /// # Arguments
-    /// * `keycloak_url` - Base Keycloak URL (e.g., "http://localhost:8080")
+    /// * `keycloak_url` - Base Keycloak URL (e.g., <http://localhost:8080>)
     /// * `realm` - Keycloak realm name (e.g., "mpc")
     pub fn new(keycloak_url: &str, realm: &str) -> Result<Self, JwksError> {
         let jwks_url = format!("{keycloak_url}/realms/{realm}/protocol/openid-connect/certs");
@@ -71,6 +71,7 @@ impl JwksClient {
         let mut cache = self.cache.write().await;
         cache.jwks = Some(jwks);
         cache.last_fetch = Some(std::time::Instant::now());
+        drop(cache);
 
         Ok(jwk_clone)
     }
@@ -99,6 +100,7 @@ impl JwksClient {
         let mut cache = self.cache.write().await;
         cache.jwks = Some(jwks);
         cache.last_fetch = Some(std::time::Instant::now());
+        drop(cache);
 
         Ok(())
     }

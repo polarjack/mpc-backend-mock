@@ -14,7 +14,6 @@ use self::error::{
 };
 
 /// Token introspection response from Keycloak
-#[allow(dead_code)]
 #[derive(Debug, serde::Deserialize)]
 pub struct TokenIntrospectionResponse {
     /// Whether the token is active
@@ -55,7 +54,6 @@ pub struct TokenIntrospectionResponse {
 }
 
 /// Keycloak client wrapper for user management and authentication
-#[allow(dead_code)]
 #[derive(Clone)]
 pub struct KeycloakClient {
     realm: String,
@@ -73,8 +71,7 @@ impl KeycloakClient {
     /// # Errors
     ///
     /// Returns an error if the client cannot be initialized
-    #[allow(dead_code)]
-    pub async fn new(config: KeycloakConfig) -> Result<Self> {
+    pub fn new(config: KeycloakConfig) -> Result<Self> {
         let client = if config.verify_ssl {
             reqwest::Client::new()
         } else {
@@ -101,7 +98,6 @@ impl KeycloakClient {
     /// # Errors
     ///
     /// Returns an error if Keycloak health check fails
-    #[allow(dead_code)]
     pub async fn health_check(&self) -> Result<bool> {
         let health_url = format!("{}/health/ready", self.server_url);
         let response = self.client.get(&health_url).send().await.context(HealthCheckSnafu)?;
@@ -114,7 +110,6 @@ impl KeycloakClient {
     /// # Errors
     ///
     /// Returns an error if the Keycloak API call fails
-    #[allow(dead_code)]
     pub async fn user_exists_by_email(&self, email: &str) -> Result<bool> {
         let admin = self.get_admin_client().await?;
 
@@ -152,7 +147,6 @@ impl KeycloakClient {
     /// - Authentication with Keycloak fails
     /// - User creation fails
     /// - User retrieval after creation fails
-    #[allow(dead_code)]
     pub async fn create_user(&self, email: &str, password: &str) -> Result<Uuid> {
         let admin = self.get_admin_client().await?;
 
@@ -172,7 +166,8 @@ impl KeycloakClient {
         };
 
         // Create user in Keycloak
-        admin.realm_users_post(&self.realm, user).await.context(CreateUserSnafu)?;
+        let _create_user_response =
+            admin.realm_users_post(&self.realm, user).await.context(CreateUserSnafu)?;
 
         // Retrieve the created user to get the UUID
         let users = admin
@@ -267,7 +262,6 @@ impl KeycloakClient {
     /// # Ok(())
     /// # }
     /// ```
-    #[allow(dead_code)]
     pub async fn introspect_token(&self, token: &str) -> Result<TokenIntrospectionResponse> {
         // Build introspection endpoint URL
         let introspect_url = format!(

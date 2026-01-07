@@ -92,4 +92,4 @@ zeus-cli-common         = { workspace = true }
 shadow-rs = { workspace = true }
 
 [lints]
-# workspace = true
+workspace = true

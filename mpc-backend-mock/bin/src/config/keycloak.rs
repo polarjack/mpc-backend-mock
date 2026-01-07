@@ -1,17 +1,14 @@
 use serde::{Deserialize, Serialize};
 
 /// JWT validation method
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum JwtValidationMethod {
     /// Local JWT validation using JWKS (faster, cached)
+    #[default]
     Jwks,
     /// Server-side token introspection (real-time, authoritative)
     Introspection,
-}
-
-impl Default for JwtValidationMethod {
-    fn default() -> Self { Self::Jwks }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

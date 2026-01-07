@@ -50,4 +50,4 @@ zeus-axum       = { workspace = true }
 zeus-cli-common = { workspace = true }
 
 [lints]
-# workspace = true
+workspace = true

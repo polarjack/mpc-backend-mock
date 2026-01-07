@@ -23,7 +23,7 @@ use zeus_axum::{json_response, response::EncapsulatedJsonError};
 use zpl_rpc_client::RpcClient as ZplRpcClient;
 
 pub use self::{controller::ApiDoc, error::Error};
-use crate::service::UserManagementService;
+use crate::{keycloak_client::KeycloakClient, service::UserManagementService};
 
 pub async fn new_api_server<ShutdownSignal>(
     socket_address: SocketAddr,
@@ -81,7 +81,7 @@ pub struct ServiceState {
     pub zpl_rpc_client: ZplRpcClient,
     pub user_management_service: UserManagementService,
     pub jwks_client: middleware::JwksClient,
-    pub keycloak_client: Option<std::sync::Arc<crate::keycloak_client::KeycloakClient>>,
+    pub keycloak_client: Option<Arc<KeycloakClient>>,
     pub jwt_validation_method: mpc_backend_mock_core::config::JwtValidationMethod,
 }
 
@@ -96,11 +96,11 @@ impl ServiceState {
         jwks_client: middleware::JwksClient,
         keycloak_admin: Arc<KeycloakAdmin>,
         keycloak_realm: String,
-        keycloak_client: Option<std::sync::Arc<crate::keycloak_client::KeycloakClient>>,
+        keycloak_client: Option<Arc<KeycloakClient>>,
         jwt_validation_method: mpc_backend_mock_core::config::JwtValidationMethod,
     ) -> Self {
         let user_management_service =
-            UserManagementService::new(database.clone(), keycloak_admin, keycloak_realm);
+            UserManagementService::new(database, keycloak_admin, keycloak_realm);
 
         Self {
             bitcoin_rpc_client: bitcoin_rpc_client.clone(),

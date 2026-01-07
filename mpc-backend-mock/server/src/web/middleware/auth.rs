@@ -13,7 +13,6 @@ use super::jwks::JwksClient;
 use crate::web::ServiceState;
 
 /// JWT Claims structure
-#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
     /// Subject (user ID from Keycloak)
@@ -51,7 +50,6 @@ pub struct AuthUser {
 /// JWT authentication middleware
 ///
 /// Validates JWT tokens from the Authorization header and extracts user claims
-#[allow(dead_code)]
 pub async fn jwt_auth_middleware(
     axum::extract::State(service_state): axum::extract::State<ServiceState>,
     headers: HeaderMap,
@@ -101,7 +99,6 @@ pub async fn jwt_auth_middleware(
 }
 
 /// Extract bearer token from Authorization header
-#[allow(dead_code)]
 fn extract_token_from_headers(headers: &HeaderMap) -> Result<&str, AuthError> {
     let auth_header = headers
         .get("Authorization")
@@ -124,7 +121,6 @@ fn extract_token_from_headers(headers: &HeaderMap) -> Result<&str, AuthError> {
 /// - Fetches the public key from Keycloak's JWKS endpoint
 /// - Verifies the token signature with the public key
 /// - Validates expiration and other standard claims
-#[allow(dead_code)]
 async fn validate_token_jwks(token: &str, jwks_client: &JwksClient) -> Result<Claims, AuthError> {
     tracing::info!("Validating JWT token: {}", token);
 
@@ -173,7 +169,6 @@ async fn validate_token_jwks(token: &str, jwks_client: &JwksClient) -> Result<Cl
 /// - Calls Keycloak's introspection endpoint to validate the token server-side
 /// - Checks if the token is active
 /// - Converts the introspection response to Claims structure
-#[allow(dead_code)]
 async fn validate_token_introspection(
     token: &str,
     service_state: &ServiceState,

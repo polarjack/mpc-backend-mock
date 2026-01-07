@@ -8,7 +8,7 @@ use snafu::ResultExt;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use super::error::{CreateKeycloakUserSnafu, GetKeycloakUserSnafu, Result};
+use super::error::{Error, Result};
 use crate::{
     entity::User,
     service::{error, sql_executor::UserSqlExecutor},
@@ -26,7 +26,7 @@ impl UserManagementService {
     /// Create a new user management service
     #[inline]
     #[must_use]
-    pub fn new(db: PgPool, keycloak_admin: Arc<KeycloakAdmin>, realm: String) -> Self {
+    pub const fn new(db: PgPool, keycloak_admin: Arc<KeycloakAdmin>, realm: String) -> Self {
         Self { db, keycloak_admin, realm }
     }
 
@@ -43,7 +43,7 @@ impl UserManagementService {
     pub async fn create_user(&self, email: &str, password: &str) -> Result<User> {
         // Validate email format
         if !Self::is_valid_email(email) {
-            return Err(super::error::Error::InvalidEmail { email: email.to_string() });
+            return Err(Error::InvalidEmail { email: email.to_string() });
         }
 
         let mut tx = self.db.begin().await.context(error::BeginTransactionSnafu)?;
@@ -52,14 +52,14 @@ impl UserManagementService {
         let existing_user = tx.get_user_by_email(email).await?;
 
         if existing_user.is_some() {
-            return Err(super::error::Error::UserAlreadyExists { email: email.to_string() });
+            return Err(Error::UserAlreadyExists { email: email.to_string() });
         }
 
         // Step 2: Check if user exists in Keycloak
         let user_exists_in_keycloak = self.check_user_exists_in_keycloak(email).await?;
 
         if user_exists_in_keycloak {
-            return Err(super::error::Error::UserExistsInKeycloak { email: email.to_string() });
+            return Err(Error::UserExistsInKeycloak { email: email.to_string() });
         }
 
         // Step 3: Create user in Keycloak
@@ -96,7 +96,7 @@ impl UserManagementService {
                 None,
             )
             .await
-            .context(GetKeycloakUserSnafu)?;
+            .context(error::GetKeycloakUserSnafu)?;
 
         // Check if any user with exact email match exists
         Ok(users.iter().any(|u| u.email.as_ref().is_some_and(|e| e == email)))
@@ -120,10 +120,11 @@ impl UserManagementService {
         };
 
         // Create user in Keycloak
-        self.keycloak_admin
+        let _create_user_response = self
+            .keycloak_admin
             .realm_users_post(&self.realm, user)
             .await
-            .context(CreateKeycloakUserSnafu)?;
+            .context(error::CreateKeycloakUserSnafu)?;
 
         // Retrieve the created user to get the UUID
         let users = self
@@ -146,21 +147,22 @@ impl UserManagementService {
                 None,
             )
             .await
-            .context(GetKeycloakUserSnafu)?;
+            .context(error::GetKeycloakUserSnafu)?;
 
         // Find the user with matching email
-        let created_user =
-            users.iter().find(|u| u.email.as_ref().is_some_and(|e| e == email)).ok_or_else(
-                || super::error::Error::KeycloakUserNotFound { email: email.to_string() },
-            )?;
+        let created_user = users
+            .iter()
+            .find(|u| u.email.as_ref().is_some_and(|e| e == email))
+            .ok_or_else(|| Error::KeycloakUserNotFound { email: email.to_string() })?;
 
         // Parse the Keycloak user ID
-        let keycloak_id = created_user.id.as_ref().ok_or_else(|| {
-            super::error::Error::KeycloakUserNotFound { email: email.to_string() }
-        })?;
+        let keycloak_id = created_user
+            .id
+            .as_ref()
+            .ok_or_else(|| Error::KeycloakUserNotFound { email: email.to_string() })?;
 
         Uuid::parse_str(keycloak_id)
-            .map_err(|_| super::error::Error::KeycloakUserNotFound { email: email.to_string() })
+            .map_err(|_| Error::KeycloakUserNotFound { email: email.to_string() })
     }
 
     /// Get user by ID
@@ -173,10 +175,7 @@ impl UserManagementService {
     pub async fn get_user_by_id(&self, user_id: Uuid) -> Result<User> {
         let mut conn = self.db.acquire().await.context(error::AcquireConnectionSnafu)?;
 
-        let user = conn
-            .get_user_by_id(&user_id)
-            .await?
-            .ok_or(super::error::Error::UserNotFound { user_id })?;
+        let user = conn.get_user_by_id(&user_id).await?.ok_or(Error::UserNotFound { user_id })?;
 
         Ok(user)
     }
@@ -191,10 +190,9 @@ impl UserManagementService {
     pub async fn get_user_by_email(&self, email: String) -> Result<User> {
         let mut conn = self.db.acquire().await.context(error::AcquireConnectionSnafu)?;
 
-        let user =
-            conn.get_user_by_email(&email).await?.ok_or(super::error::Error::UserNotFound {
-                user_id: Uuid::nil(), // Using nil UUID since we don't have the ID
-            })?;
+        let user = conn.get_user_by_email(&email).await?.ok_or(Error::UserNotFound {
+            user_id: Uuid::nil(), // Using nil UUID since we don't have the ID
+        })?;
 
         Ok(user)
     }
@@ -212,7 +210,7 @@ impl UserManagementService {
         let user = conn
             .get_user_by_keycloak_id(keycloak_user_id)
             .await?
-            .ok_or(super::error::Error::UserNotFound { user_id: *keycloak_user_id })?;
+            .ok_or(Error::UserNotFound { user_id: *keycloak_user_id })?;
 
         Ok(user)
     }
