@@ -4,7 +4,12 @@ mod error;
 mod user;
 
 use axum::{middleware, routing, Extension, Router};
+use http::HeaderName;
 use mpc_backend_mock_core::ServerInfo;
+use tower_http::{
+    cors,
+    cors::{AllowHeaders, CorsLayer},
+};
 use utoipa::OpenApi;
 use zeus_axum::response::EncapsulatedJson;
 
@@ -12,6 +17,18 @@ pub use self::error::{Error, Result};
 use crate::{web::middleware::jwt_auth_middleware, ServiceState};
 
 pub fn api_v1_router(service_state: &ServiceState) -> Router {
+    // FIXME: might need to be configurable
+    // allow the request from frontend host: *
+    // sample request header
+    // "authorization, content-type"
+    let cors_layer = CorsLayer::new()
+        .allow_methods([http::Method::GET, http::Method::POST])
+        .allow_origin(cors::Any)
+        .allow_headers(AllowHeaders::list([
+            HeaderName::from_static("authorization"),
+            HeaderName::from_static("content-type"),
+        ]));
+
     // Public routes (no authentication required)
     let public_routes = Router::new()
         .route("/v1/info", routing::get(server_info))
@@ -25,6 +42,7 @@ pub fn api_v1_router(service_state: &ServiceState) -> Router {
     Router::new()
         .nest("/api", public_routes)
         .nest("/api", protected_routes)
+        .layer(cors_layer)
         .with_state(service_state.clone())
 }
 
