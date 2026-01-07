@@ -4,6 +4,7 @@ use keycloak::{
     types::{CredentialRepresentation, UserRepresentation},
     KeycloakAdmin, KeycloakAdminToken,
 };
+use mpc_backend_mock_core::config::KeycloakConfig;
 use snafu::ResultExt;
 use uuid::Uuid;
 
@@ -11,7 +12,6 @@ use self::error::{
     AuthenticationSnafu, CreateUserSnafu, GetUserSnafu, HealthCheckSnafu, IntrospectTokenSnafu,
     ParseIntrospectionResponseSnafu, Result, UserNotFoundSnafu,
 };
-use crate::config::KeycloakConfig;
 
 /// Token introspection response from Keycloak
 #[allow(dead_code)]

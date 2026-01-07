@@ -10,6 +10,7 @@ use uuid::Uuid;
 use zeus_axum::response::EncapsulatedJsonError;
 
 use super::jwks::JwksClient;
+use crate::web::ServiceState;
 
 /// JWT Claims structure
 #[allow(dead_code)]
@@ -52,7 +53,7 @@ pub struct AuthUser {
 /// Validates JWT tokens from the Authorization header and extracts user claims
 #[allow(dead_code)]
 pub async fn jwt_auth_middleware(
-    axum::extract::State(jwks_client): axum::extract::State<JwksClient>,
+    axum::extract::State(service_state): axum::extract::State<ServiceState>,
     headers: HeaderMap,
     mut request: Request,
     next: Next,
@@ -60,10 +61,20 @@ pub async fn jwt_auth_middleware(
     // Extract token from Authorization header
     let token = extract_token_from_headers(&headers)?;
 
-    tracing::debug!("Authenticating JWT token");
+    tracing::debug!(
+        "Authenticating JWT token using {:?} method",
+        service_state.jwt_validation_method
+    );
 
-    // Decode and validate token
-    let claims = validate_token(token, &jwks_client).await?;
+    // Route to appropriate validation method
+    let claims = match service_state.jwt_validation_method {
+        mpc_backend_mock_core::config::JwtValidationMethod::Jwks => {
+            validate_token_jwks(token, &service_state.jwks_client).await?
+        }
+        mpc_backend_mock_core::config::JwtValidationMethod::Introspection => {
+            validate_token_introspection(token, &service_state).await?
+        }
+    };
 
     tracing::info!("Token valid for user ID: {}", &claims.sub);
 
@@ -107,14 +118,14 @@ fn extract_token_from_headers(headers: &HeaderMap) -> Result<&str, AuthError> {
     Ok(&auth_header[7..])
 }
 
-/// Validate JWT token with proper signature verification
+/// Validate JWT token with JWKS-based signature verification
 ///
 /// This implementation:
 /// - Fetches the public key from Keycloak's JWKS endpoint
 /// - Verifies the token signature with the public key
 /// - Validates expiration and other standard claims
 #[allow(dead_code)]
-async fn validate_token(token: &str, jwks_client: &JwksClient) -> Result<Claims, AuthError> {
+async fn validate_token_jwks(token: &str, jwks_client: &JwksClient) -> Result<Claims, AuthError> {
     tracing::info!("Validating JWT token: {}", token);
 
     // Decode header to get algorithm and key ID
@@ -156,6 +167,60 @@ async fn validate_token(token: &str, jwks_client: &JwksClient) -> Result<Claims,
     Ok(token_data.claims)
 }
 
+/// Validate JWT token using Keycloak's token introspection endpoint
+///
+/// This implementation:
+/// - Calls Keycloak's introspection endpoint to validate the token server-side
+/// - Checks if the token is active
+/// - Converts the introspection response to Claims structure
+#[allow(dead_code)]
+async fn validate_token_introspection(
+    token: &str,
+    service_state: &ServiceState,
+) -> Result<Claims, AuthError> {
+    tracing::info!("Validating JWT token via introspection");
+
+    // Get the Keycloak client from service state
+    let keycloak_client = service_state.keycloak_client.as_ref().ok_or_else(|| {
+        AuthError::InvalidConfiguration(
+            "Introspection validation requires KeycloakClient to be configured".to_string(),
+        )
+    })?;
+
+    // Call introspection endpoint
+    let introspection = keycloak_client
+        .introspect_token(token)
+        .await
+        .map_err(|e| AuthError::IntrospectionError(format!("Token introspection failed: {e}")))?;
+
+    tracing::debug!("Introspection response: active={}", introspection.active);
+
+    // Check if token is active
+    if !introspection.active {
+        return Err(AuthError::InvalidToken("Token is not active".to_string()));
+    }
+
+    // Convert introspection response to Claims
+    let claims = Claims {
+        sub: introspection
+            .sub
+            .ok_or_else(|| AuthError::InvalidToken("Missing 'sub' claim in token".to_string()))?,
+        iat: introspection.iat.unwrap_or(0),
+        exp: introspection
+            .exp
+            .ok_or_else(|| AuthError::InvalidToken("Missing 'exp' claim in token".to_string()))?,
+        aud: introspection.aud,
+        iss: introspection.iss,
+        email: None,
+        preferred_username: introspection.username,
+        email_verified: None,
+    };
+
+    tracing::debug!("Token successfully validated via introspection for subject: {}", claims.sub);
+
+    Ok(claims)
+}
+
 /// Authentication errors
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -168,6 +233,10 @@ pub enum AuthError {
     InsufficientPermissions,
     /// JWKS fetch error
     JwksError(String),
+    /// Invalid configuration
+    InvalidConfiguration(String),
+    /// Token introspection error
+    IntrospectionError(String),
 }
 
 impl IntoResponse for AuthError {
@@ -184,6 +253,13 @@ impl IntoResponse for AuthError {
             }
             Self::JwksError(msg) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, format!("Authentication service error: {msg}"))
+            }
+            Self::InvalidConfiguration(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Authentication configuration error: {msg}"),
+            ),
+            Self::IntrospectionError(msg) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, format!("Token introspection error: {msg}"))
             }
         };
 

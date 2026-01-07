@@ -17,9 +17,14 @@ use zeus_cli_common::config::LogConfig;
 
 use self::key_management_service::KeyManagementService;
 pub use self::{
-    bitcoin::BitcoinConfig, error::Error, health_check::HealthCheckConfig,
-    keycloak::KeycloakConfig, metrics::MetricsConfig, postgres::PostgresConfig,
-    solana::SolanaConfig, web::WebConfig,
+    bitcoin::BitcoinConfig,
+    error::Error,
+    health_check::HealthCheckConfig,
+    keycloak::{JwtValidationMethod, KeycloakConfig},
+    metrics::MetricsConfig,
+    postgres::PostgresConfig,
+    solana::SolanaConfig,
+    web::WebConfig,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -135,6 +140,14 @@ pub async fn load_server_config(
             admin_username: keycloak.admin_username,
             admin_password: keycloak.admin_password,
             verify_ssl: keycloak.verify_ssl,
+            jwt_validation_method: match keycloak.jwt_validation_method {
+                crate::config::JwtValidationMethod::Jwks => {
+                    mpc_backend_mock_core::config::JwtValidationMethod::Jwks
+                }
+                crate::config::JwtValidationMethod::Introspection => {
+                    mpc_backend_mock_core::config::JwtValidationMethod::Introspection
+                }
+            },
         },
     })
 }

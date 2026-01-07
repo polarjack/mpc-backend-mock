@@ -1,6 +1,7 @@
 pub mod entity;
 mod error;
 mod grpc;
+pub mod keycloak_client;
 mod service;
 mod web;
 
@@ -52,13 +53,28 @@ pub async fn serve_with_shutdown(config: Config, server_info: ServerInfo) -> Res
 
     let keycloak_admin = Arc::new(initialize_keycloak_admin(&keycloak).await?);
 
+    // Initialize KeycloakClient for token introspection (if needed)
+    let keycloak_client = match keycloak.jwt_validation_method {
+        mpc_backend_mock_core::config::JwtValidationMethod::Introspection => {
+            let client = crate::keycloak_client::KeycloakClient::new(keycloak.clone())
+                .await
+                .map_err(|err| Error::InitializeKeycloakClient {
+                    message: format!("Failed to initialize Keycloak client: {err}"),
+                })?;
+            Some(Arc::new(client))
+        }
+        mpc_backend_mock_core::config::JwtValidationMethod::Jwks => None,
+    };
+
     let service_state = ServiceState::new(
         database.clone(),
         &bitcoin_rpc_client,
         zpl_rpc_client,
         jwks_client,
         keycloak_admin,
-        keycloak.realm,
+        keycloak.realm.clone(),
+        keycloak_client,
+        keycloak.jwt_validation_method.clone(),
     );
 
     let lifecycle_manager = LifecycleManager::<Error>::new();

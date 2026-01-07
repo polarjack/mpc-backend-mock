@@ -18,10 +18,9 @@ pub fn api_v1_router(service_state: &ServiceState) -> Router {
         .route("/v1/users", routing::post(user::create_user));
 
     // Protected routes (authentication required)
-    let protected_routes =
-        Router::new().route("/v1/users/me", routing::get(user::get_current_user)).layer(
-            middleware::from_fn_with_state(service_state.jwks_client.clone(), jwt_auth_middleware),
-        );
+    let protected_routes = Router::new()
+        .route("/v1/users/me", routing::get(user::get_current_user))
+        .layer(middleware::from_fn_with_state(service_state.clone(), jwt_auth_middleware));
 
     Router::new()
         .nest("/api", public_routes)

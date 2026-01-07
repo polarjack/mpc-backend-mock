@@ -2,6 +2,19 @@ use std::{fmt::Debug, net::SocketAddr};
 
 use sqlx::postgres::PgSslMode;
 
+/// JWT validation method
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum JwtValidationMethod {
+    /// Local JWT validation using JWKS (faster, cached)
+    Jwks,
+    /// Server-side token introspection (real-time, authoritative)
+    Introspection,
+}
+
+impl Default for JwtValidationMethod {
+    fn default() -> Self { Self::Jwks }
+}
+
 #[derive(Clone, Debug)]
 pub struct Config {
     pub web: WebConfig,
@@ -26,6 +39,7 @@ pub struct KeycloakConfig {
     pub admin_username: String,
     pub admin_password: String,
     pub verify_ssl: bool,
+    pub jwt_validation_method: JwtValidationMethod,
 }
 
 #[derive(Clone, Debug)]

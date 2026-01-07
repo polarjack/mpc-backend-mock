@@ -247,13 +247,16 @@ where
 
 ### Authentication & Authorization
 
-The server uses **Keycloak** for authentication with JWT-based token validation using JWKS (JSON Web Key Set) for cryptographic signature verification.
+The server uses **Keycloak** for authentication with **dual JWT validation methods**: JWKS-based local validation (default) or server-side token introspection.
 
 **Architecture:**
 
 - Public endpoints: No authentication required (e.g., `POST /api/v1/users`, `GET /api/v1/info`)
 - Protected endpoints: Require valid JWT Bearer token (e.g., `GET /api/v1/users/me`)
-- JWT middleware: Validates token signature using JWKS, checks expiration, and extracts user claims
+- **JWT Validation Methods** (configurable):
+  1. **JWKS** (default): Fast local validation using public keys, 5-minute cache
+  2. **Introspection**: Real-time server-side validation via Keycloak API
+- JWT middleware: Routes to appropriate validation method based on configuration
 - User linking: Database users are linked to Keycloak users via `keycloak_user_id`
 - **Keycloak Admin Client**: Initialized once at application startup in [`lib.rs:259-287`](mpc-backend-mock/server/src/lib.rs#L259-L287)
   - Wrapped in `Arc<KeycloakAdmin>` for shared ownership across services
@@ -303,13 +306,39 @@ The server uses **Keycloak** for authentication with JWT-based token validation 
 
 - `server_url`: Keycloak base URL (e.g., "http://localhost:8080")
 - `realm`: Keycloak realm name (e.g., "mpc")
-- `client_id`: Backend service client ID
-- `client_secret`: Backend service client secret
+- `admin_username`: Admin username for Keycloak operations
+- `admin_password`: Admin password for Keycloak operations
+- `verify_ssl`: Enable/disable TLS certificate verification (default: true)
+- `jwt_validation_method`: Choose validation method - "jwks" (default) or "introspection"
 - JWKS URL is auto-constructed: `{server_url}/realms/{realm}/protocol/openid-connect/certs`
 
-**Token Introspection:**
+**Choosing a JWT Validation Method:**
 
-The `KeycloakClient` in `mpc-backend-mock/bin/src/keycloak_client/mod.rs` provides token introspection functionality to validate JWT tokens and retrieve their metadata:
+Add to your `config.yaml`:
+
+```yaml
+keycloak:
+  server_url: "http://localhost:8080"
+  realm: "mpc"
+  jwt_validation_method: "jwks"  # or "introspection"
+```
+
+**Use JWKS when:**
+- High request volume (lower latency required)
+- Token revocation is not time-critical
+- Reducing load on Keycloak server is important
+- Tokens are short-lived (minimize revocation window)
+
+**Use Introspection when:**
+- Real-time token revocation is required
+- Security is paramount (e.g., financial operations)
+- Authoritative token status from Keycloak is needed
+- Request volume is moderate
+- Token lifetimes are longer
+
+**Token Introspection Implementation:**
+
+The `KeycloakClient` in [`mpc-backend-mock/server/src/keycloak_client/mod.rs`](mpc-backend-mock/server/src/keycloak_client/mod.rs) provides token introspection functionality. When `jwt_validation_method` is set to "introspection", the auth middleware automatically uses this client to validate tokens in real-time.
 
 ```rust
 use mpc_backend_mock::keycloak_client::{KeycloakClient, TokenIntrospectionResponse};

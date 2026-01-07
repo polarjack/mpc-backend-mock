@@ -81,6 +81,8 @@ pub struct ServiceState {
     pub zpl_rpc_client: ZplRpcClient,
     pub user_management_service: UserManagementService,
     pub jwks_client: middleware::JwksClient,
+    pub keycloak_client: Option<std::sync::Arc<crate::keycloak_client::KeycloakClient>>,
+    pub jwt_validation_method: mpc_backend_mock_core::config::JwtValidationMethod,
 }
 
 impl ServiceState {
@@ -94,6 +96,8 @@ impl ServiceState {
         jwks_client: middleware::JwksClient,
         keycloak_admin: Arc<KeycloakAdmin>,
         keycloak_realm: String,
+        keycloak_client: Option<std::sync::Arc<crate::keycloak_client::KeycloakClient>>,
+        jwt_validation_method: mpc_backend_mock_core::config::JwtValidationMethod,
     ) -> Self {
         let user_management_service =
             UserManagementService::new(database.clone(), keycloak_admin, keycloak_realm);
@@ -103,6 +107,8 @@ impl ServiceState {
             zpl_rpc_client,
             user_management_service,
             jwks_client,
+            keycloak_client,
+            jwt_validation_method,
         }
     }
 }

@@ -2,7 +2,6 @@ mod cli;
 mod command;
 mod config;
 mod error;
-mod keycloak_client;
 mod kms_client;
 mod shadow {
     #![allow(clippy::needless_raw_string_hashes)]

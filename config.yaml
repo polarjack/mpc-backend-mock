@@ -52,3 +52,4 @@ keycloak:
   admin_username: "admin"
   admin_password: "admin"
   verify_tls: false
+  jwt_validation_method: "introspection"

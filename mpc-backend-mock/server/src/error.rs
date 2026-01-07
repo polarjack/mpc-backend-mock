@@ -48,6 +48,9 @@ pub enum Error {
 
     #[snafu(display("Failed to initialize Keycloak admin client: {message}"))]
     InitializeKeycloakAdmin { message: String },
+
+    #[snafu(display("Failed to initialize Keycloak client: {message}"))]
+    InitializeKeycloakClient { message: String },
 }
 
 impl From<zeus_metrics::Error> for Error {

@@ -1,5 +1,19 @@
 use serde::{Deserialize, Serialize};
 
+/// JWT validation method
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum JwtValidationMethod {
+    /// Local JWT validation using JWKS (faster, cached)
+    Jwks,
+    /// Server-side token introspection (real-time, authoritative)
+    Introspection,
+}
+
+impl Default for JwtValidationMethod {
+    fn default() -> Self { Self::Jwks }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct KeycloakConfig {
     /// Keycloak server URL (e.g., "http://localhost:8080")
@@ -29,6 +43,10 @@ pub struct KeycloakConfig {
     /// Enable TLS certificate verification
     #[serde(default = "KeycloakConfig::default_verify_ssl")]
     pub verify_ssl: bool,
+
+    /// JWT validation method
+    #[serde(default)]
+    pub jwt_validation_method: JwtValidationMethod,
 }
 
 impl KeycloakConfig {
@@ -64,6 +82,7 @@ impl Default for KeycloakConfig {
             admin_username: Self::default_admin_username(),
             admin_password: Self::default_admin_password(),
             verify_ssl: Self::default_verify_ssl(),
+            jwt_validation_method: JwtValidationMethod::default(),
         }
     }
 }
