@@ -63,6 +63,8 @@ pub struct KeycloakClient {
     server_url: String,
     admin_username: String,
     admin_password: String,
+    client_id: String,
+    client_secret: String,
 }
 
 impl KeycloakClient {
@@ -89,6 +91,8 @@ impl KeycloakClient {
             server_url: config.server_url,
             admin_username: config.admin_username,
             admin_password: config.admin_password,
+            client_id: config.client_id,
+            client_secret: config.client_secret,
         })
     }
 
@@ -265,36 +269,6 @@ impl KeycloakClient {
     /// ```
     #[allow(dead_code)]
     pub async fn introspect_token(&self, token: &str) -> Result<TokenIntrospectionResponse> {
-        // First, obtain an admin access token using the token endpoint
-        let token_url =
-            format!("{}/realms/{}/protocol/openid-connect/token", self.server_url, self.realm);
-
-        // Request admin token using password grant (resource owner password
-        // credentials)
-        let token_params = [
-            ("grant_type", "password"),
-            ("client_id", "admin-cli"),
-            ("username", &self.admin_username),
-            ("password", &self.admin_password),
-        ];
-
-        let token_response = self
-            .client
-            .post(&token_url)
-            .form(&token_params)
-            .send()
-            .await
-            .context(IntrospectTokenSnafu)?;
-
-        // Parse the token response to extract the access_token
-        #[derive(serde::Deserialize)]
-        struct TokenResponse {
-            access_token: String,
-        }
-
-        let token_data: TokenResponse =
-            token_response.json().await.context(IntrospectTokenSnafu)?;
-
         // Build introspection endpoint URL
         let introspect_url = format!(
             "{}/realms/{}/protocol/openid-connect/token/introspect",
@@ -306,12 +280,13 @@ impl KeycloakClient {
         // Prepare form data with the token to introspect
         let form_data = [("token", token)];
 
-        // Make POST request to introspection endpoint with admin bearer token
+        // Make POST request to introspection endpoint with HTTP Basic Auth
+        // Using client_id and client_secret for authentication
         let response = self
             .client
             .post(&introspect_url)
             .header("Content-Type", "application/x-www-form-urlencoded")
-            .bearer_auth(&token_data.access_token)
+            .basic_auth(&self.client_id, Some(&self.client_secret))
             .form(&form_data)
             .send()
             .await
@@ -319,6 +294,8 @@ impl KeycloakClient {
 
         // Parse response body
         let response_text = response.text().await.context(IntrospectTokenSnafu)?;
+
+        tracing::info!("Introspection response: {}", response_text);
 
         // Deserialize JSON response
         let introspection_response: TokenIntrospectionResponse =

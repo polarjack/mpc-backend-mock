@@ -137,6 +137,8 @@ pub async fn load_server_config(
         keycloak: mpc_backend_mock_core::config::KeycloakConfig {
             server_url: keycloak.server_url,
             realm: keycloak.realm,
+            client_id: keycloak.client_id,
+            client_secret: keycloak.client_secret,
             admin_username: keycloak.admin_username,
             admin_password: keycloak.admin_password,
             verify_ssl: keycloak.verify_ssl,

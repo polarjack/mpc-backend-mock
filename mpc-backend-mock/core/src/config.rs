@@ -36,6 +36,8 @@ pub struct Config {
 pub struct KeycloakConfig {
     pub server_url: String,
     pub realm: String,
+    pub client_id: String,
+    pub client_secret: String,
     pub admin_username: String,
     pub admin_password: String,
     pub verify_ssl: bool,

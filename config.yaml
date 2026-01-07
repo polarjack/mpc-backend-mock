@@ -49,6 +49,8 @@ metrics:
 keycloak:
   server_url: "http://localhost:8080"
   realm: "mpc"
+  client_id: "mpc-backend-service"
+  client_secret: "rlojUqcDXfDTtbpy3RLACzAlKlVcdJmw"
   admin_username: "admin"
   admin_password: "admin"
   verify_tls: false

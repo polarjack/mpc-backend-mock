@@ -64,9 +64,12 @@ async fn create_test_app() -> axum::Router {
     let keycloak_config = mpc_backend_mock_core::config::KeycloakConfig {
         server_url: "http://localhost:8080".to_string(),
         realm: "mpc".to_string(),
+        client_id: "mpc-backend-service".to_string(),
+        client_secret: "test-secret".to_string(),
         admin_username: "admin".to_string(),
         admin_password: "admin".to_string(),
         verify_ssl: false,
+        jwt_validation_method: mpc_backend_mock_core::config::JwtValidationMethod::Jwks,
     };
 
     let client = reqwest::Client::builder()
@@ -92,7 +95,9 @@ async fn create_test_app() -> axum::Router {
         zpl_rpc_client,
         jwks_client,
         keycloak_admin,
-        keycloak_config.realm,
+        keycloak_config.realm.clone(),
+        None,
+        keycloak_config.jwt_validation_method.clone(),
     );
 
     // Create router using the exported controller module
