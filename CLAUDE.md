@@ -307,6 +307,32 @@ The server uses **Keycloak** for authentication with JWT-based token validation 
 - `client_secret`: Backend service client secret
 - JWKS URL is auto-constructed: `{server_url}/realms/{realm}/protocol/openid-connect/certs`
 
+**Token Introspection:**
+
+The `KeycloakClient` in `mpc-backend-mock/bin/src/keycloak_client/mod.rs` provides token introspection functionality to validate JWT tokens and retrieve their metadata:
+
+```rust
+use mpc_backend_mock::keycloak_client::{KeycloakClient, TokenIntrospectionResponse};
+
+let client = KeycloakClient::new(keycloak_config).await?;
+let response: TokenIntrospectionResponse = client.introspect_token("eyJhbGciOiJSUzI1NiIsInR5cCI...").await?;
+
+if response.active {
+    println!("Token is valid");
+    println!("Username: {:?}", response.username);
+    println!("Subject (user ID): {:?}", response.sub);
+    println!("Expires at: {:?}", response.exp);
+    println!("Issued at: {:?}", response.iat);
+} else {
+    println!("Token is invalid or expired");
+}
+```
+
+The introspection endpoint validates tokens server-side by calling Keycloak's RFC 7662 token introspection endpoint:
+- Endpoint: `POST /realms/{realm}/protocol/openid-connect/token/introspect`
+- Authentication: Uses admin credentials via password grant flow
+- Returns: Token metadata including active status, subject, expiration, claims
+
 **Testing:**
 
 - Integration tests in `mpc-backend-mock/server/tests/`

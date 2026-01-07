@@ -165,6 +165,58 @@ curl -X GET "http://localhost:14444/api/v1/users/me" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
+### Token Introspection
+
+The backend provides a `KeycloakClient` utility for server-side token validation via Keycloak's token introspection endpoint (RFC 7662):
+
+```rust
+use mpc_backend_mock::keycloak_client::{KeycloakClient, TokenIntrospectionResponse};
+
+// Initialize client with Keycloak configuration
+let client = KeycloakClient::new(keycloak_config).await?;
+
+// Introspect a JWT token to validate it and retrieve metadata
+let response: TokenIntrospectionResponse = client
+    .introspect_token("eyJhbGciOiJSUzI1NiIsInR5cCI...")
+    .await?;
+
+if response.active {
+    println!("✓ Token is valid");
+    println!("  Username: {:?}", response.username);
+    println!("  Subject: {:?}", response.sub);
+    println!("  Expires: {:?}", response.exp);
+} else {
+    println!("✗ Token is invalid or expired");
+}
+```
+
+**Using curl to introspect a token:**
+
+```bash
+# First, get an admin token
+ADMIN_TOKEN=$(curl -s -X POST "http://localhost:8080/realms/mpc/protocol/openid-connect/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password" \
+  -d "client_id=admin-cli" \
+  -d "username=admin" \
+  -d "password=admin" | jq -r '.access_token')
+
+# Introspect a user token
+curl -X POST "http://localhost:8080/realms/mpc/protocol/openid-connect/token/introspect" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -d "token=<USER_JWT_TOKEN>"
+```
+
+**Response fields:**
+- `active` (boolean) - Whether the token is currently active
+- `username` - The username associated with the token
+- `sub` - Subject identifier (Keycloak user ID)
+- `exp` - Expiration timestamp (Unix epoch)
+- `iat` - Issued at timestamp (Unix epoch)
+- `scope` - OAuth2 scopes granted to the token
+- `client_id` - Client ID that requested the token
+
 ## OpenAPI Documentation
 
 Generate and view the OpenAPI specification:
