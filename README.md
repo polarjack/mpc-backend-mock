@@ -145,6 +145,100 @@ Authorization: Bearer <jwt-token>
 
 ## Authentication Flow
 
+### JWT Validation Methods
+
+The backend supports two JWT validation methods, configurable via `jwt_validation_method` in `config.yaml`:
+
+1. **JWKS (Default)**: Fast local validation using public keys with 5-minute cache
+2. **Introspection**: Real-time server-side validation via Keycloak API
+
+#### JWKS Validation Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Backend
+    participant JwksClient
+    participant Keycloak
+
+    Client->>Backend: GET /api/v1/users/me<br/>Authorization: Bearer <JWT>
+    Backend->>Backend: Extract JWT from header
+    Backend->>Backend: Decode JWT header (get kid)
+
+    alt Cache Hit (< 5 min old)
+        Backend->>JwksClient: get_jwk(kid)
+        JwksClient->>JwksClient: Check cache
+        JwksClient-->>Backend: Return cached JWK
+    else Cache Miss or Expired
+        Backend->>JwksClient: get_jwk(kid)
+        JwksClient->>Keycloak: GET /realms/mpc/protocol/openid-connect/certs
+        Keycloak-->>JwksClient: Return JWKS (public keys)
+        JwksClient->>JwksClient: Cache JWKS for 5 minutes
+        JwksClient-->>Backend: Return JWK for kid
+    end
+
+    Backend->>Backend: Verify JWT signature with public key
+    Backend->>Backend: Validate claims (exp, iss, aud)
+    Backend->>Backend: Extract user claims (sub, email)
+    Backend->>Backend: Create AuthUser and inject into request
+    Backend->>Client: 200 OK with user data
+
+    Note over Backend,Keycloak: Advantages: Fast, reduces Keycloak load<br/>Tradeoff: Token revocation not immediate
+```
+
+#### Introspection Validation Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Backend
+    participant Keycloak
+
+    Client->>Backend: GET /api/v1/users/me<br/>Authorization: Bearer <JWT>
+    Backend->>Backend: Extract JWT from header
+
+    Backend->>Keycloak: POST /realms/mpc/protocol/openid-connect/token/introspect<br/>Basic Auth: client_id:client_secret<br/>Form: token=<JWT>
+    Keycloak->>Keycloak: Validate token server-side
+    Keycloak->>Keycloak: Check if token is revoked
+    Keycloak->>Keycloak: Check expiration and claims
+    Keycloak-->>Backend: Return introspection response<br/>{active: true/false, sub, exp, ...}
+
+    alt Token Active
+        Backend->>Backend: Convert introspection to Claims
+        Backend->>Backend: Create AuthUser and inject into request
+        Backend->>Client: 200 OK with user data
+    else Token Inactive
+        Backend->>Client: 401 Unauthorized<br/>Token is not active
+    end
+
+    Note over Backend,Keycloak: Advantages: Real-time revocation, authoritative<br/>Tradeoff: Higher latency, more Keycloak load
+```
+
+### Choosing a Validation Method
+
+Add to your `config.yaml`:
+
+```yaml
+keycloak:
+  server_url: "http://localhost:8080"
+  realm: "mpc"
+  jwt_validation_method: "jwks"  # or "introspection"
+```
+
+**Use JWKS when:**
+- High request volume (lower latency required)
+- Token revocation is not time-critical
+- Reducing load on Keycloak server is important
+- Tokens are short-lived (minimize revocation window)
+
+**Use Introspection when:**
+- Real-time token revocation is required
+- Security is paramount (e.g., financial operations)
+- Authoritative token status from Keycloak is needed
+- Request volume is moderate
+
+### Obtaining and Using JWT Tokens
+
 1. **Obtain JWT Token from Keycloak:**
 
 ```bash
@@ -165,7 +259,7 @@ curl -X GET "http://localhost:14444/api/v1/users/me" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-### Token Introspection
+### Token Introspection (Manual Testing)
 
 The backend provides a `KeycloakClient` utility for server-side token validation via Keycloak's token introspection endpoint (RFC 7662):
 
