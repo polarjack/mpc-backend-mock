@@ -19,6 +19,7 @@ members = [
   "crates/protobuf-types",
   "crates/metrics",
   "crates/web",
+  "crates/notification",
 
   "mpc-backend-mock/bin",
   "mpc-backend-mock/core",
