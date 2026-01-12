@@ -433,7 +433,7 @@ TOKEN=$(curl -s -X POST http://localhost:8080/realms/mpc/protocol/openid-connect
   -d "client_id=mpc-backend-service" \
   -d "client_secret=YOUR_CLIENT_SECRET" | jq -r '.access_token')
 
-# Create user
+# Create user with password
 curl -X POST http://localhost:8080/admin/realms/mpc/users \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
@@ -449,6 +449,23 @@ curl -X POST http://localhost:8080/admin/realms/mpc/users \
       "value": "password123",
       "temporary": false
     }]
+  }'
+```
+
+Note: in the real case the user will be setup to lognin through IDP google, so no password is needed.
+The fields firstName and lastName will be setup optional and be imported from IDP.
+since the binding of the IDP is set to use the email binding we setup the username and email to be the same.
+
+```bash
+# create user without password
+curl -X POST http://localhost:8080/admin/realms/mpc/users \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "target@example.com",
+    "email": "target@eexample.com",
+    "emailVerified": true,
+    "enabled": true,
   }'
 ```
 
