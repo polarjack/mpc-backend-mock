@@ -1,8 +1,11 @@
-use axum::{extract::State, Json};
+use axum::{
+    extract::{Query, State},
+    Json,
+};
 use zeus_axum::response::EncapsulatedJson;
 
 use crate::{
-    entity::{CreateUserRequest, CreateUserResponse, User, UserInfo},
+    entity::{CreateUserRequest, CreateUserResponse, DeleteUserParams, User, UserInfo},
     web::{controller::Result, extractor::AuthUser as AuthUserExtractor},
     ServiceState,
 };
@@ -68,4 +71,30 @@ pub async fn get_current_user(
     };
 
     Ok(EncapsulatedJson::ok(user_info))
+}
+
+/// Delete a user by email (for testing purposes only)
+// sample path /api/v1/users?email={email}
+#[utoipa::path(
+    delete,
+    operation_id = "delete_user",
+    path = "/api/v1/users",
+    params(
+        ("email" = String, Path, description = "Email of the user to delete")
+    ),
+    responses(
+        (status = 200, description = "User deleted successfully", body = ()),
+        (status = 400, description = "Invalid request (e.g., invalid email format)"),
+        (status = 404, description = "User not found in database")
+    ),
+    tag = "Users"
+)]
+pub async fn delete_user(
+    State(state): State<ServiceState>,
+    Query(params): Query<DeleteUserParams>,
+) -> Result<EncapsulatedJson<String>> {
+    // Delete user in Keycloak and database
+    let delete_user_id = state.user_management_service.delete_user_by_email(&params.email).await?;
+
+    Ok(EncapsulatedJson::ok(delete_user_id.to_string()))
 }

@@ -1,4 +1,4 @@
 // include the entities for the services
 mod user;
 
-pub use user::{CreateUserRequest, CreateUserResponse, User, UserInfo};
+pub use user::{CreateUserRequest, CreateUserResponse, DeleteUserParams, User, UserInfo};

@@ -70,6 +70,63 @@ impl UserManagementService {
         Ok(user)
     }
 
+    /// Delete a user by email (for testing purposes)
+    pub async fn delete_user_by_email(&self, email: &str) -> Result<Uuid> {
+        // Validate email format
+        if !Self::is_valid_email(email) {
+            return Err(Error::InvalidEmail { email: email.to_string() });
+        }
+
+        let mut tx = self.db.begin().await.context(error::BeginTransactionSnafu)?;
+
+        // Step 1: check if user exists in database
+        let database_existing_user = tx.get_user_by_email(email).await?;
+
+        if database_existing_user.is_none() {
+            return Err(Error::UserNotFound {
+                user_id: Uuid::nil(), // Using nil UUID since we don't have the ID
+            });
+        }
+
+        let database_existing_user = database_existing_user.unwrap();
+
+        // Step 2: check if user exists in Keycloak
+        let keycloak_existing_user = self.check_user_exists_in_keycloak(email).await?;
+
+        if !keycloak_existing_user {
+            return Err(Error::KeycloakUserNotFound { email: email.to_string() });
+        }
+
+        // Step 3: delete user from database and Keycloak, commit if successful or
+        // rollback on error
+        let delete_result = async {
+            tx.delete_user_by_id(&database_existing_user.id).await?;
+
+            self.keycloak_admin
+                .realm_users_with_user_id_delete(
+                    &self.realm,
+                    &database_existing_user.keycloak_user_id.to_string(),
+                )
+                .await
+                .context(error::DeleteKeycloakUserSnafu)?;
+
+            Ok::<(), Error>(())
+        }
+        .await;
+
+        match delete_result {
+            Ok(()) => {
+                tx.commit().await.context(error::CommitTransactionSnafu)?;
+            }
+            Err(e) => {
+                tx.rollback().await.context(error::RollBackTransactionSnafu)?;
+                return Err(e);
+            }
+        }
+
+        Ok(database_existing_user.id)
+    }
+
     /// Check if a user exists in Keycloak by email
     async fn check_user_exists_in_keycloak(&self, email: &str) -> Result<bool> {
         // Search for user by email

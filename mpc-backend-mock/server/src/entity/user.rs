@@ -59,6 +59,9 @@ pub struct CreateUserRequest {
     pub email: String,
 }
 
+/// alias for delete user query parameters
+pub type DeleteUserParams = CreateUserRequest;
+
 /// Response after creating a user
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct CreateUserResponse {

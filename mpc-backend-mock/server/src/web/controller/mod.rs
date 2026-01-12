@@ -4,7 +4,7 @@ mod error;
 mod user;
 
 use axum::{middleware, routing, Extension, Router};
-use http::HeaderName;
+use http::{HeaderName, Method};
 use mpc_backend_mock_core::ServerInfo;
 use tower_http::{
     cors,
@@ -22,7 +22,7 @@ pub fn api_v1_router(service_state: &ServiceState) -> Router {
     // sample request header
     // "authorization, content-type"
     let cors_layer = CorsLayer::new()
-        .allow_methods([http::Method::GET, http::Method::POST])
+        .allow_methods([Method::GET, Method::POST, Method::DELETE])
         .allow_origin(cors::Any)
         .allow_headers(AllowHeaders::list([
             HeaderName::from_static("authorization"),
@@ -32,7 +32,8 @@ pub fn api_v1_router(service_state: &ServiceState) -> Router {
     // Public routes (no authentication required)
     let public_routes = Router::new()
         .route("/v1/info", routing::get(server_info))
-        .route("/v1/users", routing::post(user::create_user));
+        .route("/v1/users", routing::post(user::create_user))
+        .route("/v1/users", routing::delete(user::delete_user));
 
     // Protected routes (authentication required)
     let protected_routes = Router::new()

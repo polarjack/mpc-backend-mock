@@ -21,6 +21,8 @@ pub trait UserSqlExecutor {
 
     async fn get_user_by_id(&mut self, user_id: &Uuid) -> Result<Option<User>>;
 
+    async fn delete_user_by_id(&mut self, user_id: &Uuid) -> Result<()>;
+
     async fn get_user_by_keycloak_id(&mut self, keycloak_user_id: &Uuid) -> Result<Option<User>>;
 }
 
@@ -65,6 +67,15 @@ where
             .context(error::GetUserByIdSnafu)?;
 
         Ok(user)
+    }
+
+    async fn delete_user_by_id(&mut self, user_id: &Uuid) -> Result<()> {
+        sqlx::query_file!("sql/user/delete_user_by_id.sql", user_id)
+            .execute(&mut *self)
+            .await
+            .context(error::DeleteUserByIdSnafu)?;
+
+        Ok(())
     }
 
     async fn get_user_by_keycloak_id(&mut self, keycloak_user_id: &Uuid) -> Result<Option<User>> {

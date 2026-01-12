@@ -17,6 +17,9 @@ pub enum Error {
     #[snafu(display("Fail to commit transaction, error: {source}"))]
     CommitTransaction { source: sqlx::Error },
 
+    #[snafu(display("Fail to roll back transaction, error: {source}"))]
+    RollBackTransaction { source: sqlx::Error },
+
     #[snafu(display("Fail to acquire database connection, error: {source}"))]
     AcquireConnection { source: sqlx::Error },
 
@@ -74,6 +77,9 @@ pub enum Error {
     #[snafu(display("Fail to get user by id, error: {source}"))]
     GetUserById { source: sqlx::Error },
 
+    #[snafu(display("Fail to delete user by id, error: {source}"))]
+    DeleteUserById { source: sqlx::Error },
+
     #[snafu(display("Fail to get user by email, error: {source}"))]
     GetUserByEmail { source: sqlx::Error },
 
@@ -91,6 +97,9 @@ pub enum Error {
 
     #[snafu(display("Failed to create user in Keycloak, error: {source}"))]
     CreateKeycloakUser { source: keycloak::KeycloakError },
+
+    #[snafu(display("Failed to delete user in Keycloak, error: {source}"))]
+    DeleteKeycloakUser { source: keycloak::KeycloakError },
 
     #[snafu(display("User already exists in Keycloak: {email}"))]
     UserExistsInKeycloak { email: String },
