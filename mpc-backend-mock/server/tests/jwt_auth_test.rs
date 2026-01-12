@@ -149,13 +149,8 @@ async fn test_jwt_validation_with_valid_token() {
     let test_email = format!("jwt-test-{}@example.com", Uuid::new_v4());
 
     // First create a user
-    let create_response = server
-        .post("/api/v1/users")
-        .json(&CreateUserRequest {
-            email: test_email.clone(),
-            password: "TestPassword123!".to_string(),
-        })
-        .await;
+    let create_response =
+        server.post("/api/v1/users").json(&CreateUserRequest { email: test_email.clone() }).await;
 
     assert_eq!(create_response.status_code(), StatusCode::OK);
     let created: CreateUserResponse = create_response.json();
@@ -275,13 +270,8 @@ async fn test_protected_endpoint_returns_user_info() {
     let test_email = format!("protected-test-{}@example.com", Uuid::new_v4());
 
     // Create a user
-    let create_response = server
-        .post("/api/v1/users")
-        .json(&CreateUserRequest {
-            email: test_email.clone(),
-            password: "TestPassword123!".to_string(),
-        })
-        .await;
+    let create_response =
+        server.post("/api/v1/users").json(&CreateUserRequest { email: test_email.clone() }).await;
 
     assert_eq!(create_response.status_code(), StatusCode::OK);
     let created: CreateUserResponse = create_response.json();

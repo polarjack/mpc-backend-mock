@@ -13,7 +13,7 @@ pub enum JwtValidationMethod {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct KeycloakConfig {
-    /// Keycloak server URL (e.g., "http://localhost:8080")
+    /// Keycloak server URL (e.g., <http://localhost:8080>)
     #[serde(default = "KeycloakConfig::default_server_url")]
     pub server_url: String,
 

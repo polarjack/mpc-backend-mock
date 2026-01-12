@@ -23,10 +23,10 @@ impl KeyManagementService {
         match self {
             Self::GoogleCloudPlatform { project_id, location, key_ring, crypto_key } => {
                 let client = kms_client::gcp::Client::new(
-                    project_id.to_string(),
-                    location.to_string(),
-                    key_ring.to_string(),
-                    crypto_key.to_string(),
+                    project_id.clone(),
+                    location.clone(),
+                    key_ring.clone(),
+                    crypto_key.clone(),
                 )
                 .await
                 .context(error::InitializeGcpKmsSnafu)?;

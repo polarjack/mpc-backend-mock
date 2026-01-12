@@ -121,13 +121,8 @@ async fn test_create_user_success() {
     let test_email = format!("test-{}@example.com", Uuid::new_v4());
 
     // Create user
-    let response = server
-        .post("/api/v1/users")
-        .json(&CreateUserRequest {
-            email: test_email.clone(),
-            password: "TestPassword123!".to_string(),
-        })
-        .await;
+    let response =
+        server.post("/api/v1/users").json(&CreateUserRequest { email: test_email.clone() }).await;
 
     assert_eq!(response.status_code(), StatusCode::OK);
 
@@ -146,24 +141,14 @@ async fn test_create_user_duplicate_email() {
     let test_email = format!("test-duplicate-{}@example.com", Uuid::new_v4());
 
     // Create user first time
-    let response1 = server
-        .post("/api/v1/users")
-        .json(&CreateUserRequest {
-            email: test_email.clone(),
-            password: "TestPassword123!".to_string(),
-        })
-        .await;
+    let response1 =
+        server.post("/api/v1/users").json(&CreateUserRequest { email: test_email.clone() }).await;
 
     assert_eq!(response1.status_code(), StatusCode::OK);
 
     // Try to create same user again
-    let response2 = server
-        .post("/api/v1/users")
-        .json(&CreateUserRequest {
-            email: test_email.clone(),
-            password: "TestPassword123!".to_string(),
-        })
-        .await;
+    let response2 =
+        server.post("/api/v1/users").json(&CreateUserRequest { email: test_email.clone() }).await;
 
     assert_eq!(response2.status_code(), StatusCode::CONFLICT);
 
@@ -183,10 +168,7 @@ async fn test_create_user_invalid_email() {
     for invalid_email in invalid_emails {
         let response = server
             .post("/api/v1/users")
-            .json(&CreateUserRequest {
-                email: invalid_email.to_string(),
-                password: "TestPassword123!".to_string(),
-            })
+            .json(&CreateUserRequest { email: invalid_email.to_string() })
             .await;
 
         assert_eq!(

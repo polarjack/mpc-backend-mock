@@ -57,10 +57,6 @@ pub struct CreateUserRequest {
     /// User's email address
     #[schema(example = "user@example.com")]
     pub email: String,
-
-    /// User's password (will be stored in Keycloak)
-    #[schema(example = "SecurePassword123!")]
-    pub password: String,
 }
 
 /// Response after creating a user

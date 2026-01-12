@@ -29,7 +29,7 @@ pub async fn create_user(
     Json(request): Json<CreateUserRequest>,
 ) -> Result<EncapsulatedJson<CreateUserResponse>> {
     // Create user in Keycloak and database
-    let user = state.user_management_service.create_user(&request.email, &request.password).await?;
+    let user = state.user_management_service.create_user(&request.email).await?;
 
     Ok(EncapsulatedJson::ok(CreateUserResponse { user }))
 }

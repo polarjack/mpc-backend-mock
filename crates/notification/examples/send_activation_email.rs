@@ -4,7 +4,7 @@
 //! # Prerequisites
 //!
 //! 1. Set up Google Workspace service account with domain-wide delegation
-//! 2. Set GOOGLE_APPLICATION_CREDENTIALS environment variable
+//! 2. Set `GOOGLE_APPLICATION_CREDENTIALS` environment variable
 //! 3. Configure the impersonate user and recipient email
 //!
 //! # Usage

@@ -1,9 +1,6 @@
 use std::sync::Arc;
 
-use keycloak::{
-    types::{CredentialRepresentation, UserRepresentation},
-    KeycloakAdmin,
-};
+use keycloak::{types::UserRepresentation, KeycloakAdmin};
 use snafu::ResultExt;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -40,7 +37,7 @@ impl UserManagementService {
     /// - User already exists in Keycloak
     /// - Keycloak user creation fails
     /// - Database operation fails
-    pub async fn create_user(&self, email: &str, password: &str) -> Result<User> {
+    pub async fn create_user(&self, email: &str) -> Result<User> {
         // Validate email format
         if !Self::is_valid_email(email) {
             return Err(Error::InvalidEmail { email: email.to_string() });
@@ -63,7 +60,7 @@ impl UserManagementService {
         }
 
         // Step 3: Create user in Keycloak
-        let keycloak_user_id = self.create_keycloak_user(email, password).await?;
+        let keycloak_user_id = self.create_keycloak_user(email).await?;
 
         // Step 4: Create user in system database with Keycloak user ID
         let user = tx.insert_user(email, &keycloak_user_id, true).await?;
@@ -103,19 +100,13 @@ impl UserManagementService {
     }
 
     /// Create a new user in Keycloak
-    async fn create_keycloak_user(&self, email: &str, password: &str) -> Result<Uuid> {
+    async fn create_keycloak_user(&self, email: &str) -> Result<Uuid> {
         // Create user representation
         let user = UserRepresentation {
             email: Some(email.to_string()),
             username: Some(email.to_string()),
             enabled: Some(true),
             email_verified: Some(false),
-            credentials: Some(vec![CredentialRepresentation {
-                type_: Some("password".to_string()),
-                value: Some(password.to_string()),
-                temporary: Some(false),
-                ..Default::default()
-            }]),
             ..Default::default()
         };
 
@@ -144,7 +135,7 @@ impl UserManagementService {
                 None,
                 None,
                 None,
-                None,
+                Some(email.to_string()),
             )
             .await
             .context(error::GetKeycloakUserSnafu)?;
