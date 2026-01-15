@@ -35,8 +35,6 @@ pub struct KeycloakConfig {
     pub realm: String,
     pub client_id: String,
     pub client_secret: String,
-    pub admin_client_id: String,
-    pub admin_client_secret: String,
     pub verify_ssl: bool,
     pub jwt_validation_method: JwtValidationMethod,
 }

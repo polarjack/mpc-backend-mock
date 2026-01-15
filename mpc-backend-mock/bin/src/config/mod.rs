@@ -139,8 +139,6 @@ pub async fn load_server_config(
             realm: keycloak.realm,
             client_id: keycloak.client_id,
             client_secret: keycloak.client_secret,
-            admin_client_id: keycloak.admin_client_id,
-            admin_client_secret: keycloak.admin_client_secret,
             verify_ssl: keycloak.verify_ssl,
             jwt_validation_method: match keycloak.jwt_validation_method {
                 JwtValidationMethod::Jwks => {

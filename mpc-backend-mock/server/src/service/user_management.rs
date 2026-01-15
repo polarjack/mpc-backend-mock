@@ -108,7 +108,8 @@ impl UserManagementService {
         let delete_result = async {
             tx.delete_user_by_id(&database_existing_user.id).await?;
 
-            self.keycloak_admin
+            let _result = self
+                .keycloak_admin
                 .realm_users_with_user_id_delete(
                     &self.realm,
                     &database_existing_user.keycloak_user_id.to_string(),

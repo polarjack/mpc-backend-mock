@@ -51,7 +51,5 @@ keycloak:
   realm: "mpc"
   client_id: "mpc-backend-service"
   client_secret: "rlojUqcDXfDTtbpy3RLACzAlKlVcdJmw"
-  admin_username: "admin"
-  admin_password: "admin"
   verify_tls: false
   jwt_validation_method: "introspection"

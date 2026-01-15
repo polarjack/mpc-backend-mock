@@ -274,60 +274,6 @@ fn initialize_jwks_client(keycloak: &KeycloakConfig) -> Result<JwksClient> {
     })
 }
 
-// #[tracing::instrument(
-//     skip(keycloak),
-//     fields(
-//         server_url = %keycloak.server_url,
-//         realm = %keycloak.realm
-//     )
-// )]
-// async fn initialize_keycloak_admin(
-//     keycloak: &KeycloakConfig,
-// ) -> Result<KeycloakAdmin<KeycloakServiceAccountAdminTokenRetriever>> {
-//     tracing::info!("Initializing Keycloak admin client");
-
-//     let client = reqwest::Client::builder()
-//         .danger_accept_invalid_certs(!keycloak.verify_ssl)
-//         .build()
-//         .map_err(|err| Error::InitializeKeycloakAdmin {
-//             message: format!("Failed to build HTTP client: {err}"),
-//         })?;
-
-//     // Use service account token retriever with client credentials flow
-//     let token_retriever =
-//         KeycloakServiceAccountAdminTokenRetriever::create_with_custom_realm(
-//             &keycloak.admin_client_id,
-//             &keycloak.admin_client_secret,
-//             &keycloak.realm,
-//             client.clone(),
-//         );
-
-//     // Create admin client with the service account token retriever
-//     let keycloak_admin =
-//         KeycloakAdmin::new(&keycloak.server_url, token_retriever, client);
-
-//     // // GET /admin/realms/{realm} for verification
-//     // let realm =
-// keycloak_admin.realm_get(&keycloak.realm).await.map_err(|err| {     //
-// Error::InitializeKeycloakAdmin {     //         message: format!("Failed to
-// verify Keycloak realm: {err}"),     //     }
-//     // })?;
-
-//     // // Verify that the realm exists and matches the expected realm name
-//     // if realm.realm.as_deref() != Some(&keycloak.realm) {
-//     //     return Err(Error::InitializeKeycloakAdmin {
-//     //         message: format!(
-//     //             "Keycloak realm '{}' does not exist or does not match the
-// configured realm",     //             keycloak.realm
-//     //         ),
-//     //     });
-//     // }
-
-//     tracing::info!("Keycloak admin client initialized successfully");
-
-//     Ok(keycloak_admin)
-// }
-
 fn create_web_http_server_future(
     listen_address: SocketAddr,
     service_state: ServiceState,

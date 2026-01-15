@@ -59,8 +59,6 @@ pub struct KeycloakClient {
     realm: String,
     client: reqwest::Client,
     server_url: String,
-    admin_client_id: String,
-    admin_client_secret: String,
     client_id: String,
     client_secret: String,
 }
@@ -86,8 +84,6 @@ impl KeycloakClient {
             realm: config.realm,
             client,
             server_url: config.server_url,
-            admin_client_id: config.admin_client_id,
-            admin_client_secret: config.admin_client_secret,
             client_id: config.client_id,
             client_secret: config.client_secret,
         })
@@ -209,8 +205,8 @@ impl KeycloakClient {
 
     async fn get_admin_token_retriever(&self) -> KeycloakServiceAccountAdminTokenRetriever {
         KeycloakServiceAccountAdminTokenRetriever::create_with_custom_realm(
-            &self.admin_client_id,
-            &self.admin_client_secret,
+            &self.client_id,
+            &self.client_secret,
             &self.realm,
             self.client.clone(),
         )
@@ -221,13 +217,6 @@ impl KeycloakClient {
     pub async fn get_admin_client(
         &self,
     ) -> Result<KeycloakAdmin<KeycloakServiceAccountAdminTokenRetriever>> {
-        tracing::info!(
-            "service_url: {}, realm: {}, admin_client_id: {}, admin_client_secret: {}",
-            self.server_url,
-            self.realm,
-            self.admin_client_id,
-            self.admin_client_secret
-        );
         // Use service account token retriever with client credentials flow
         let token_retriever = self.get_admin_token_retriever().await;
 

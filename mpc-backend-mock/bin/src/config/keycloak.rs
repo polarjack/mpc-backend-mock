@@ -29,14 +29,6 @@ pub struct KeycloakConfig {
     #[serde(default = "KeycloakConfig::default_client_secret")]
     pub client_secret: String,
 
-    /// Admin client ID for user management operations (service account)
-    #[serde(default = "KeycloakConfig::default_admin_client_id")]
-    pub admin_client_id: String,
-
-    /// Admin client secret for user management operations (service account)
-    #[serde(default = "KeycloakConfig::default_admin_client_secret")]
-    pub admin_client_secret: String,
-
     /// Enable TLS certificate verification
     #[serde(default = "KeycloakConfig::default_verify_ssl")]
     pub verify_ssl: bool,
@@ -60,12 +52,6 @@ impl KeycloakConfig {
     pub fn default_client_secret() -> String { "changeme".to_string() }
 
     #[inline]
-    pub fn default_admin_client_id() -> String { "admin-cli".to_string() }
-
-    #[inline]
-    pub fn default_admin_client_secret() -> String { "changeme".to_string() }
-
-    #[inline]
     pub const fn default_verify_ssl() -> bool { true }
 }
 
@@ -76,8 +62,6 @@ impl Default for KeycloakConfig {
             realm: Self::default_realm(),
             client_id: Self::default_client_id(),
             client_secret: Self::default_client_secret(),
-            admin_client_id: Self::default_admin_client_id(),
-            admin_client_secret: Self::default_admin_client_secret(),
             verify_ssl: Self::default_verify_ssl(),
             jwt_validation_method: JwtValidationMethod::default(),
         }
