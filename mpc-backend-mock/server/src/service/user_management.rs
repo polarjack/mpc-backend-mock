@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use keycloak::{types::UserRepresentation, KeycloakAdmin};
+use keycloak::{
+    types::UserRepresentation, KeycloakAdmin, KeycloakServiceAccountAdminTokenRetriever,
+};
 use snafu::ResultExt;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -15,7 +17,7 @@ use crate::{
 #[derive(Clone)]
 pub struct UserManagementService {
     db: PgPool,
-    keycloak_admin: Arc<KeycloakAdmin>,
+    keycloak_admin: Arc<KeycloakAdmin<KeycloakServiceAccountAdminTokenRetriever>>,
     realm: String,
 }
 
@@ -23,7 +25,11 @@ impl UserManagementService {
     /// Create a new user management service
     #[inline]
     #[must_use]
-    pub const fn new(db: PgPool, keycloak_admin: Arc<KeycloakAdmin>, realm: String) -> Self {
+    pub const fn new(
+        db: PgPool,
+        keycloak_admin: Arc<KeycloakAdmin<KeycloakServiceAccountAdminTokenRetriever>>,
+        realm: String,
+    ) -> Self {
         Self { db, keycloak_admin, realm }
     }
 

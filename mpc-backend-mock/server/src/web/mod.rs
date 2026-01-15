@@ -9,7 +9,7 @@ use axum::{
     extract::Request, http, response::IntoResponse, routing, Extension, Json, Router, ServiceExt,
 };
 use eris_bitcoin_rpc_client::Client as BitcoinRpcClient;
-use keycloak::KeycloakAdmin;
+use keycloak::{KeycloakAdmin, KeycloakServiceAccountAdminTokenRetriever};
 use mpc_backend_mock_core::ServerInfo;
 use snafu::ResultExt;
 use sqlx::PgPool;
@@ -94,7 +94,7 @@ impl ServiceState {
         bitcoin_rpc_client: &BitcoinRpcClient,
         zpl_rpc_client: ZplRpcClient,
         jwks_client: middleware::JwksClient,
-        keycloak_admin: Arc<KeycloakAdmin>,
+        keycloak_admin: Arc<KeycloakAdmin<KeycloakServiceAccountAdminTokenRetriever>>,
         keycloak_realm: String,
         keycloak_client: Option<Arc<KeycloakClient>>,
         jwt_validation_method: mpc_backend_mock_core::config::JwtValidationMethod,

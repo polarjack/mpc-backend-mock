@@ -2,14 +2,14 @@ pub mod error;
 
 use keycloak::{
     types::{CredentialRepresentation, UserRepresentation},
-    KeycloakAdmin, KeycloakAdminToken,
+    KeycloakAdmin, KeycloakServiceAccountAdminTokenRetriever,
 };
 use mpc_backend_mock_core::config::KeycloakConfig;
 use snafu::ResultExt;
 use uuid::Uuid;
 
 use self::error::{
-    AuthenticationSnafu, CreateUserSnafu, GetUserSnafu, HealthCheckSnafu, IntrospectTokenSnafu,
+    CreateUserSnafu, GetUserSnafu, HealthCheckSnafu, IntrospectTokenSnafu,
     ParseIntrospectionResponseSnafu, Result, UserNotFoundSnafu,
 };
 
@@ -59,8 +59,8 @@ pub struct KeycloakClient {
     realm: String,
     client: reqwest::Client,
     server_url: String,
-    admin_username: String,
-    admin_password: String,
+    admin_client_id: String,
+    admin_client_secret: String,
     client_id: String,
     client_secret: String,
 }
@@ -86,8 +86,8 @@ impl KeycloakClient {
             realm: config.realm,
             client,
             server_url: config.server_url,
-            admin_username: config.admin_username,
-            admin_password: config.admin_password,
+            admin_client_id: config.admin_client_id,
+            admin_client_secret: config.admin_client_secret,
             client_id: config.client_id,
             client_secret: config.client_secret,
         })
@@ -207,20 +207,32 @@ impl KeycloakClient {
             .map_err(|_| UserNotFoundSnafu { user_id: email.to_string() }.build())
     }
 
-    /// Get an authenticated admin client
-    async fn get_admin_client(&self) -> Result<KeycloakAdmin> {
-        // Acquire admin token using username/password authentication
-        let admin_token = KeycloakAdminToken::acquire(
-            &self.server_url,
-            &self.admin_username,
-            &self.admin_password,
-            &self.client,
+    async fn get_admin_token_retriever(&self) -> KeycloakServiceAccountAdminTokenRetriever {
+        KeycloakServiceAccountAdminTokenRetriever::create_with_custom_realm(
+            &self.admin_client_id,
+            &self.admin_client_secret,
+            &self.realm,
+            self.client.clone(),
         )
-        .await
-        .context(AuthenticationSnafu)?;
+    }
 
-        // Create admin client with the acquired token
-        let admin = KeycloakAdmin::new(&self.server_url, admin_token, self.client.clone());
+    /// Get an authenticated admin client using service account client
+    /// credentials
+    pub async fn get_admin_client(
+        &self,
+    ) -> Result<KeycloakAdmin<KeycloakServiceAccountAdminTokenRetriever>> {
+        tracing::info!(
+            "service_url: {}, realm: {}, admin_client_id: {}, admin_client_secret: {}",
+            self.server_url,
+            self.realm,
+            self.admin_client_id,
+            self.admin_client_secret
+        );
+        // Use service account token retriever with client credentials flow
+        let token_retriever = self.get_admin_token_retriever().await;
+
+        // Create admin client with the service account token retriever
+        let admin = KeycloakAdmin::new(&self.server_url, token_retriever, self.client.clone());
 
         Ok(admin)
     }

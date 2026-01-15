@@ -66,8 +66,8 @@ async fn create_test_app() -> axum::Router {
         realm: "mpc".to_string(),
         client_id: "mpc-backend-service".to_string(),
         client_secret: "test-secret".to_string(),
-        admin_username: "admin".to_string(),
-        admin_password: "admin".to_string(),
+        admin_client_id: "mpc-backend-service".to_string(),
+        admin_client_secret: "test-secret".to_string(),
         verify_ssl: false,
         jwt_validation_method: mpc_backend_mock_core::config::JwtValidationMethod::Jwks,
     };
@@ -77,17 +77,20 @@ async fn create_test_app() -> axum::Router {
         .build()
         .expect("Failed to build HTTP client");
 
-    let admin_token = keycloak::KeycloakAdminToken::acquire(
-        &keycloak_config.server_url,
-        &keycloak_config.admin_username,
-        &keycloak_config.admin_password,
-        &client,
-    )
-    .await
-    .expect("Failed to authenticate with Keycloak");
+    // Use service account token retriever with client credentials flow
+    let token_retriever =
+        keycloak::KeycloakServiceAccountAdminTokenRetriever::create_with_custom_realm(
+            &keycloak_config.admin_client_id,
+            &keycloak_config.admin_client_secret,
+            &keycloak_config.realm,
+            client.clone(),
+        );
 
-    let keycloak_admin =
-        Arc::new(keycloak::KeycloakAdmin::new(&keycloak_config.server_url, admin_token, client));
+    let keycloak_admin = Arc::new(keycloak::KeycloakAdmin::new(
+        &keycloak_config.server_url,
+        token_retriever,
+        client,
+    ));
 
     let service_state = mpc_backend_mock_server::ServiceState::new(
         pool,

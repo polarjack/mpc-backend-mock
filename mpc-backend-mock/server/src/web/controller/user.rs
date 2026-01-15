@@ -10,6 +10,9 @@ use crate::{
     ServiceState,
 };
 
+// Get all users (for testing purposes only)
+// GET /api/v1/users, response List<User>
+
 /// Create a new user
 ///
 /// This endpoint creates a new user in both Keycloak and the database.

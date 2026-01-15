@@ -52,17 +52,24 @@ pub async fn serve_with_shutdown(config: Config, server_info: ServerInfo) -> Res
 
     let jwks_client = initialize_jwks_client(&keycloak)?;
 
-    let keycloak_admin = Arc::new(initialize_keycloak_admin(&keycloak).await?);
+    // Initialize KeycloakClient (always needed for admin operations)
+    let keycloak_client_instance =
+        KeycloakClient::new(keycloak.clone()).map_err(|err| Error::InitializeKeycloakClient {
+            message: format!("Failed to initialize Keycloak client: {err}"),
+        })?;
 
-    // Initialize KeycloakClient for token introspection (if needed)
+    // Get admin client for user management operations
+    let keycloak_admin =
+        Arc::new(keycloak_client_instance.get_admin_client().await.map_err(|err| {
+            Error::InitializeKeycloakAdmin {
+                message: format!("Failed to get Keycloak admin client: {err}"),
+            }
+        })?);
+
+    // Wrap KeycloakClient in Arc only if introspection mode is used
     let keycloak_client = match keycloak.jwt_validation_method {
         mpc_backend_mock_core::config::JwtValidationMethod::Introspection => {
-            let client = KeycloakClient::new(keycloak.clone()).map_err(|err| {
-                Error::InitializeKeycloakClient {
-                    message: format!("Failed to initialize Keycloak client: {err}"),
-                }
-            })?;
-            Some(Arc::new(client))
+            Some(Arc::new(keycloak_client_instance))
         }
         mpc_backend_mock_core::config::JwtValidationMethod::Jwks => None,
     };
@@ -267,59 +274,59 @@ fn initialize_jwks_client(keycloak: &KeycloakConfig) -> Result<JwksClient> {
     })
 }
 
-#[tracing::instrument(
-    skip(keycloak),
-    fields(
-        server_url = %keycloak.server_url,
-        realm = %keycloak.realm
-    )
-)]
-async fn initialize_keycloak_admin(keycloak: &KeycloakConfig) -> Result<keycloak::KeycloakAdmin> {
-    tracing::info!("Initializing Keycloak admin client");
+// #[tracing::instrument(
+//     skip(keycloak),
+//     fields(
+//         server_url = %keycloak.server_url,
+//         realm = %keycloak.realm
+//     )
+// )]
+// async fn initialize_keycloak_admin(
+//     keycloak: &KeycloakConfig,
+// ) -> Result<KeycloakAdmin<KeycloakServiceAccountAdminTokenRetriever>> {
+//     tracing::info!("Initializing Keycloak admin client");
 
-    let client = reqwest::Client::builder()
-        .danger_accept_invalid_certs(!keycloak.verify_ssl)
-        .build()
-        .map_err(|err| Error::InitializeKeycloakAdmin {
-            message: format!("Failed to build HTTP client: {err}"),
-        })?;
+//     let client = reqwest::Client::builder()
+//         .danger_accept_invalid_certs(!keycloak.verify_ssl)
+//         .build()
+//         .map_err(|err| Error::InitializeKeycloakAdmin {
+//             message: format!("Failed to build HTTP client: {err}"),
+//         })?;
 
-    // Acquire admin token using username/password authentication
-    let admin_token = keycloak::KeycloakAdminToken::acquire(
-        &keycloak.server_url,
-        &keycloak.admin_username,
-        &keycloak.admin_password,
-        &client,
-    )
-    .await
-    .map_err(|err| Error::InitializeKeycloakAdmin {
-        message: format!("Failed to authenticate with Keycloak: {err}"),
-    })?;
+//     // Use service account token retriever with client credentials flow
+//     let token_retriever =
+//         KeycloakServiceAccountAdminTokenRetriever::create_with_custom_realm(
+//             &keycloak.admin_client_id,
+//             &keycloak.admin_client_secret,
+//             &keycloak.realm,
+//             client.clone(),
+//         );
 
-    // Create admin client with the acquired token
-    let keycloak_admin = keycloak::KeycloakAdmin::new(&keycloak.server_url, admin_token, client);
+//     // Create admin client with the service account token retriever
+//     let keycloak_admin =
+//         KeycloakAdmin::new(&keycloak.server_url, token_retriever, client);
 
-    // GET /admin/realms/{realm} for verification
-    let realm = keycloak_admin.realm_get(&keycloak.realm).await.map_err(|err| {
-        Error::InitializeKeycloakAdmin {
-            message: format!("Failed to verify Keycloak realm: {err}"),
-        }
-    })?;
+//     // // GET /admin/realms/{realm} for verification
+//     // let realm =
+// keycloak_admin.realm_get(&keycloak.realm).await.map_err(|err| {     //
+// Error::InitializeKeycloakAdmin {     //         message: format!("Failed to
+// verify Keycloak realm: {err}"),     //     }
+//     // })?;
 
-    // Verify that the realm exists and matches the expected realm name
-    if realm.realm.as_deref() != Some(&keycloak.realm) {
-        return Err(Error::InitializeKeycloakAdmin {
-            message: format!(
-                "Keycloak realm '{}' does not exist or does not match the configured realm",
-                keycloak.realm
-            ),
-        });
-    }
+//     // // Verify that the realm exists and matches the expected realm name
+//     // if realm.realm.as_deref() != Some(&keycloak.realm) {
+//     //     return Err(Error::InitializeKeycloakAdmin {
+//     //         message: format!(
+//     //             "Keycloak realm '{}' does not exist or does not match the
+// configured realm",     //             keycloak.realm
+//     //         ),
+//     //     });
+//     // }
 
-    tracing::info!("Keycloak admin client initialized successfully");
+//     tracing::info!("Keycloak admin client initialized successfully");
 
-    Ok(keycloak_admin)
-}
+//     Ok(keycloak_admin)
+// }
 
 fn create_web_http_server_future(
     listen_address: SocketAddr,
