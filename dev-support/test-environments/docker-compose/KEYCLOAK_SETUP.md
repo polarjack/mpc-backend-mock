@@ -253,10 +253,9 @@ Add the following to your `config.yaml`:
 keycloak:
   server_url: "http://localhost:8080"
   realm: "mpc"
-  client_id: "mpc-backend-service"
-  client_secret: "YOUR_CLIENT_SECRET_HERE"
-  admin_username: "admin" # Optional: for admin API access
-  admin_password: "admin" # Optional: for admin API access
+  client_id: "mpc-backend-service"  # Service account client ID
+  client_secret: "YOUR_CLIENT_SECRET_HERE"  # Get from Keycloak Admin Console
+  verify_ssl: false  # Set to true in production
 ```
 
 ## Testing Authentication

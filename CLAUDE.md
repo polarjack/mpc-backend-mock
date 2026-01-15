@@ -268,7 +268,7 @@ The server uses **Keycloak** for authentication with **dual JWT validation metho
 1. **`mpc-backend-service`** (confidential) - Backend service account for admin operations
    - Service account with `manage-users`, `view-users`, `query-users` roles
    - Used for programmatic user creation and management via Keycloak Admin API
-   - Credentials configured in `KeycloakConfig` (`admin_username`, `admin_password`)
+   - Credentials configured in `KeycloakConfig` (`client_id`, `client_secret`)
 2. **`mpc-frontend`** (public) - Frontend SPA client with PKCE
    - OAuth2.0 Authorization Code Flow with PKCE (S256)
    - Redirect URIs: http://localhost:3000/_, http://localhost:5173/_ (Vite)
@@ -306,8 +306,8 @@ The server uses **Keycloak** for authentication with **dual JWT validation metho
 
 - `server_url`: Keycloak base URL (e.g., "http://localhost:8080")
 - `realm`: Keycloak realm name (e.g., "mpc")
-- `admin_username`: Admin username for Keycloak operations
-- `admin_password`: Admin password for Keycloak operations
+- `client_id`: Service account client ID for Keycloak operations (e.g., "mpc-backend-service")
+- `client_secret`: Service account client secret for Keycloak operations
 - `verify_ssl`: Enable/disable TLS certificate verification (default: true)
 - `jwt_validation_method`: Choose validation method - "jwks" (default) or "introspection"
 - JWKS URL is auto-constructed: `{server_url}/realms/{realm}/protocol/openid-connect/certs`
@@ -359,7 +359,7 @@ if response.active {
 
 The introspection endpoint validates tokens server-side by calling Keycloak's RFC 7662 token introspection endpoint:
 - Endpoint: `POST /realms/{realm}/protocol/openid-connect/token/introspect`
-- Authentication: Uses admin credentials via password grant flow
+- Authentication: Uses service account credentials via client credentials flow
 - Returns: Token metadata including active status, subject, expiration, claims
 
 **Testing:**

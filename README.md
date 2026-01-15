@@ -75,11 +75,9 @@ postgres:
 keycloak:
   server_url: "http://localhost:8080"
   realm: "mpc"
-  client_id: "mpc-backend"
-  client_secret: "your-client-secret-here" # Get from Keycloak Admin Console
-  admin_username: "admin"
-  admin_password: "admin"
-  verify_ssl: false # Set to true in production
+  client_id: "mpc-backend-service"  # Service account client ID
+  client_secret: "your-client-secret-here"  # Get from Keycloak Admin Console
+  verify_ssl: false  # Set to true in production
 
 bitcoin:
   network: "regtest"
@@ -287,18 +285,10 @@ if response.active {
 **Using curl to introspect a token:**
 
 ```bash
-# First, get an admin token
-ADMIN_TOKEN=$(curl -s -X POST "http://localhost:8080/realms/mpc/protocol/openid-connect/token" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=password" \
-  -d "client_id=admin-cli" \
-  -d "username=admin" \
-  -d "password=admin" | jq -r '.access_token')
-
-# Introspect a user token
+# Introspect a user token using service account client credentials
 curl -X POST "http://localhost:8080/realms/mpc/protocol/openid-connect/token/introspect" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -u "mpc-backend-service:your-client-secret" \
   -d "token=<USER_JWT_TOKEN>"
 ```
 
